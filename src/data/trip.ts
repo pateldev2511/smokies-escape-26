@@ -13,7 +13,7 @@ export const TRIP_ID = 'smokies-2026'
 
 export type Category = 'Driving' | 'Scenic' | 'Hiking' | 'Food' | 'Adventure' | 'Attraction'
 export type ImageKey = 'hero' | 'ocon' | 'ngap' | 'road' | 'kuwohi' | 'kview' | 'kfog' | 'cataract' | 'anak' | 'night' | 'river'
-export type PlaceId = 'gnv' | 'ocon' | 'ngap' | 'kuwohi' | 'sugar' | 'downtown' | 'anak' | 'coaster' | 'grill' | 'skypark'
+export type PlaceId = 'gnv' | 'ocon' | 'ngap' | 'kuwohi' | 'sugar' | 'downtown' | 'anak' | 'coaster' | 'grill' | 'skypark' | 'spice'
 
 export interface Place {
   id: PlaceId
@@ -35,6 +35,7 @@ export const PLACES: Record<PlaceId, Place> = {
   anak: { id: 'anak', name: 'Anakeesta (base)', lat: 35.71323, lng: -83.512093, elevFt: 1289, source: 'US Census geocoder — 576 Parkway' },
   coaster: { id: 'coaster', name: 'Moonshine Mountain Coaster', lat: 35.720058, lng: -83.510216, elevFt: 1273, source: 'US Census geocoder — 306 Parkway' },
   grill: { id: 'grill', name: 'The Park Grill', lat: 35.707635, lng: -83.521539, elevFt: 1342, source: 'US Census geocoder — 1110 Parkway' },
+  spice: { id: 'spice', name: 'Spice Express Indian Kitchen', lat: 35.783408, lng: -83.551739, elevFt: 1020, source: 'US Census geocoder — 3784 Parkway, Pigeon Forge' },
   skypark: { id: 'skypark', name: 'Gatlinburg SkyPark', lat: 35.71205, lng: -83.517515, elevFt: 1325, source: 'US Census geocoder — 765 Parkway' },
 }
 
@@ -46,16 +47,17 @@ export const DRIVE: Record<PlaceId, Partial<Record<PlaceId, number>>> = {
   kuwohi: { gnv: 209, ocon: 54, ngap: 26, sugar: 54, downtown: 60, anak: 60, coaster: 62, grill: 58, skypark: 59 },
   sugar: { gnv: 214, ocon: 59, ngap: 29, kuwohi: 55, downtown: 8, anak: 8, coaster: 10, grill: 6, skypark: 7 },
   downtown: { gnv: 218, ocon: 64, ngap: 34, kuwohi: 59, sugar: 7, anak: 5, coaster: 12, grill: 15, skypark: 5 },
-  anak: { gnv: 219, ocon: 64, ngap: 35, kuwohi: 60, sugar: 7, downtown: 5, coaster: 12, grill: 15, skypark: 5 },
-  coaster: { gnv: 220, ocon: 66, ngap: 36, kuwohi: 61, sugar: 9, downtown: 12, anak: 12, grill: 15, skypark: 12 },
+  anak: { gnv: 219, ocon: 64, ngap: 35, kuwohi: 60, sugar: 7, downtown: 5, coaster: 12, grill: 15, skypark: 5, spice: 14 },
+  coaster: { gnv: 220, ocon: 66, ngap: 36, kuwohi: 61, sugar: 9, downtown: 12, anak: 12, grill: 15, skypark: 12, spice: 13 },
   grill: { gnv: 217, ocon: 62, ngap: 32, kuwohi: 58, sugar: 5, downtown: 15, anak: 15, coaster: 15, skypark: 12 },
   skypark: { gnv: 218, ocon: 63, ngap: 33, kuwohi: 59, sugar: 6, downtown: 5, anak: 5, coaster: 12, grill: 12 },
+  spice: { gnv: 232 },
 }
 // Downtown legs use walking / park-and-walk buffers (5–15 min) rather than raw 1–4 min drive times.
 
 export const ROUTE_ALTERNATIVES = {
-  overPark: { min: 217, mi: 142, label: 'Over Newfound Gap (US-441 through the park)' },
-  aroundPark: { min: 346, mi: 252.5, label: 'Around the park via Pigeon Forge, I-40 & Asheville' },
+  overPark: { min: 232, mi: 150.1, label: 'From Pigeon Forge over Newfound Gap (US-441 through the park)' },
+  aroundPark: { min: 324, mi: 244.8, label: 'From Pigeon Forge around the park via I-40 & Asheville' },
 }
 
 const enc = encodeURIComponent
@@ -202,34 +204,43 @@ export const STOPS: Stop[] = [
     missions: ['Scream-face photo', 'Who brakes the least?'],
   },
   {
-    id: 'grill', anchor: true, n: 9, place: 'grill', title: 'Dinner at The Park Grill', kicker: 'Rustic lodge · steaks', category: 'Food',
-    start: '19:30', end: '20:30', travelIn: 15, bookingId: 'grill', image: 'river', address: '1110 Parkway, Gatlinburg, TN 37738',
-    description: 'A rustic mountain-lodge-style restaurant with American cuisine — steaks and other meat entrées. The last relaxed moment before the drive home.',
-    activities: ['Dinner for four', 'Trip toast'],
-    cost: '$25–$40 per person before tax & tip', costLow: 100, costHigh: 160, difficulty: 'Relaxed', weather: 'Low',
-    tips: ['Allow time to collect the car or travel from the coaster.', 'A 7:30 PM table is a target, not a confirmed reservation.'],
-    mapsUrl: search('The Park Grill 1110 Parkway Gatlinburg TN'),
-    navUrl: dir('The Park Grill, 1110 Parkway, Gatlinburg, TN', 'Moonshine Mountain Coaster, 306 Parkway, Gatlinburg, TN'),
-    links: [{ label: 'Official site', url: 'https://parkgrillgatlinburg.com/' }],
-    missions: ['Best bite of the day vote'],
+    id: 'dinner', anchor: true, n: 9, place: 'spice', title: 'Dinner at Spice Express Indian Kitchen', kicker: 'Indian · Pigeon Forge', category: 'Food',
+    start: '19:15', end: '21:00', travelIn: 45, bookingId: 'dinner', address: '3784 Parkway #101, Pigeon Forge, TN 37863',
+    description: 'An Indian dinner on the way out of the mountains — chicken tikka masala, butter chicken, biryani, lamb curry and naan. Pigeon Forge is north of Gatlinburg, so it sits on the route home. Dine-in and takeaway.',
+    activities: ['7:15–8:00 PM: drive from the coaster (holiday-traffic buffer)', '8:00–9:00 PM: dinner for four', 'Trip toast'],
+    cost: '$20–$30 per person (estimate)', costLow: 80, costHigh: 120, difficulty: 'Relaxed', weather: 'Low',
+    tips: [
+      'Published hours: Saturday 12 PM – 10 PM. Thanksgiving-weekend hours are not posted — call (865) 365-1077 to confirm.',
+      'No online reservation system found — call ahead to check seating for four around 8 PM.',
+      'The drive from the coaster is ≈ 13 min without traffic (OSRM, 6.1 mi); the 45-minute window is a holiday-traffic buffer.',
+      'Arriving home ~1:30–3:00 AM leaves less sleep before the 10 AM rental return. To keep a 1–2 AM arrival, shorten downtown or finish Anakeesta 30–45 min earlier — and aim to finish dinner closer to 8:30 PM.',
+    ],
+    mapsUrl: search('Spice Express Indian Kitchen 3784 Parkway Pigeon Forge TN'),
+    navUrl: dir('Spice Express Indian Kitchen, 3784 Parkway #101, Pigeon Forge, TN 37863', 'Moonshine Mountain Coaster, 306 Parkway, Gatlinburg, TN'),
+    links: [
+      { label: 'Menu', url: 'https://spiceexpressindiankitchen.com/menu/' },
+      { label: 'Official site', url: 'https://spiceexpressindiankitchen.com/' },
+      { label: 'Call (865) 365-1077', url: 'tel:+18653651077' },
+    ],
+    missions: ['Best bite of the day vote', 'Who orders the spiciest dish?'],
   },
   {
     id: 'home', n: 10, place: 'gnv', title: 'Return to Gainesville', kicker: 'Two drivers, zero heroics', category: 'Driving',
-    start: '20:30', end: '25:30', travelIn: 0,
+    start: '21:00', end: '27:00', travelIn: 0,
     description: 'Drive home sharing the wheel. Plan at least one proper rest stop. Never continue while sleepy — use the safest available route rather than automatically crossing high mountain roads at night.',
-    activities: ['Driver swap plan', 'Fuel + restroom stop', 'Arrive ~1:00–2:00 AM Saturday'],
+    activities: ['Driver swap plan', 'Fuel + restroom stop', 'Arrive ~1:30–3:00 AM Sunday (traffic dependent)'],
     cost: 'Fuel (see budget)', costLow: 0, costHigh: 0, difficulty: 'Long night drive', weather: 'Medium',
-    tips: [`OSRM: over Newfound Gap ≈ 3 h 37 min (142 mi) · around the park via I-40/Asheville ≈ 5 h 46 min (252 mi). Check road status and pick the safe one.`, 'Night mode in Co-Pilot dims the screen red for the passengers.'],
+    tips: [`OSRM from Pigeon Forge: over Newfound Gap ≈ 3 h 52 min (150 mi) · around the park via I-40/Asheville ≈ 5 h 24 min (245 mi). Check road status and pick the safe one.`, 'Night mode in Co-Pilot dims the screen red for the passengers.'],
     mapsUrl: search('Gainesville, GA'),
-    navUrl: 'https://www.google.com/maps/dir/?api=1&origin=Gatlinburg%2C+TN&destination=Gainesville%2C+GA&travelmode=driving',
-    links: [{ label: 'Route around the park (I-40)', url: dir('Gainesville, GA', 'Gatlinburg, TN', ['Pigeon Forge, TN', 'Newport, TN', 'Asheville, NC']) }],
+    navUrl: dir('Gainesville, GA', 'Spice Express Indian Kitchen, 3784 Parkway #101, Pigeon Forge, TN 37863'),
+    links: [{ label: 'Route around the park (I-40)', url: dir('Gainesville, GA', 'Pigeon Forge, TN', ['Newport, TN', 'Asheville, NC']) }],
     missions: ['Best moment of the day — everyone answers'],
   },
 ]
 
 // ── Bookings ────────────────────────────────────────────────────────────────
-export type BookingStatus = 'Not booked' | 'Booking in progress' | 'Confirmed' | 'Cancelled' | 'Not required'
-export const BOOKING_STATUSES: BookingStatus[] = ['Not booked', 'Booking in progress', 'Confirmed', 'Cancelled', 'Not required']
+export type BookingStatus = 'Not booked' | 'Booking in progress' | 'Holiday hours / seating to confirm' | 'Confirmed' | 'Cancelled' | 'Not required'
+export const BOOKING_STATUSES: BookingStatus[] = ['Not booked', 'Booking in progress', 'Holiday hours / seating to confirm', 'Confirmed', 'Cancelled', 'Not required']
 export interface Booking {
   id: string
   title: string
@@ -260,9 +271,9 @@ export const BOOKINGS: Booking[] = [
     status: 'Not booked', date: '2026-11-28',
   },
   {
-    id: 'grill', title: 'The Park Grill', what: 'Dinner for 4 adults · Sat Nov 28', priority: 'HIGH', preferred: 'Table ≈ 7:30 PM', guests: 4,
-    cost: '$25–$40 pp before tax & tip', url: 'https://parkgrillgatlinburg.com/get-a-table/', cta: 'Reserve a table', info: { label: 'Website', url: 'https://parkgrillgatlinburg.com/' }, stopId: 'grill',
-    notes: ['7:30 PM is a target until confirmed.'], status: 'Not booked', date: '2026-11-28',
+    id: 'dinner', title: 'Spice Express Indian Kitchen', what: 'Dinner for 4 · Sat Nov 28 · Pigeon Forge', priority: 'HIGH', preferred: 'Arrive ≈ 8:00 PM', guests: 4,
+    cost: '$20–$30 pp (estimate)', url: 'tel:+18653651077', cta: 'Call (865) 365-1077', info: { label: 'Menu', url: 'https://spiceexpressindiankitchen.com/menu/' }, stopId: 'dinner',
+    notes: ['No online reservation system found — call to confirm holiday hours and seating for four around 8 PM.', 'Published Saturday hours: 12 PM – 10 PM.'], status: 'Holiday hours / seating to confirm', date: '2026-11-28',
   },
   {
     id: 'coaster', title: 'Moonshine Mountain Coaster', what: '4 adult single rides · evening', priority: 'MEDIUM', preferred: 'After ~6:15 PM', guests: 4,
@@ -310,12 +321,12 @@ export interface DayItem { id: string; time: string; title: string; details: str
 export const FRIDAY: DayItem[] = [
   { id: 'f1', time: '18:00', title: 'Pick up rental car', kind: 'rental-pickup', details: ['Collect the vehicle; check driver’s licenses and the rental agreement.', 'Photograph every side before leaving — note existing damage.', 'Confirm fuel policy, mileage limits and additional-driver authorization.', 'Check the return instructions and location.'] },
   { id: 'f2', time: '18:30', title: 'Vehicle preparation', details: ['Fuel if needed.', 'Load luggage, snacks and water.', 'Download offline maps.', 'Check weather and NPS road closures.'] },
-  { id: 'f3', time: '19:30', title: 'Final trip check', kind: 'final-check', details: ['Confirm Anakeesta, coaster, Park Grill and the park parking tag.', 'Check mountain road availability.', 'Agree driver responsibilities.'] },
+  { id: 'f3', time: '19:30', title: 'Final trip check', kind: 'final-check', details: ['Confirm Anakeesta, coaster and the park parking tag; call Spice Express about holiday hours.', 'Check mountain road availability.', 'Agree driver responsibilities.'] },
   { id: 'f4', time: '20:00', title: 'Sleep', details: ['Lights out early — alarms for the 3:30 AM departure.'] },
 ]
 export const SUNDAY: DayItem[] = [
-  { id: 's1', time: '01:00', title: 'Target arrival home', kind: 'home', details: ['1:00–2:00 AM target — never forced if a driver is sleepy.'] },
-  { id: 's2', time: '01:30', title: 'Unload & rest', details: ['Bring everything inside; phones on chargers.'] },
+  { id: 's1', time: '01:30', title: 'Target arrival home', kind: 'home', details: ['≈ 1:30–3:00 AM, traffic dependent — never forced if a driver is sleepy.'] },
+  { id: 's2', time: '03:00', title: 'Unload & rest', details: ['Bring everything inside; phones on chargers.'] },
   { id: 's3', time: '08:30', title: 'Vehicle check', details: ['Refuel if the policy requires it.', 'Note mileage and fuel level.', 'Final walk-around photos; gather belongings.'] },
   { id: 's4', time: '10:00', title: 'Return the rental car', kind: 'rental-return', details: ['Return to the agreed location by 10:00 AM.'] },
 ]
@@ -327,12 +338,12 @@ export const PLANS: Plan[] = [
   { id: 'A', name: 'Plan A — Original Route', short: 'Cherokee → Newfound Gap → Kuwohi → Cataract → Gatlinburg → Anakeesta → Coaster → Dinner', skip: [], notes: ['The full original itinerary.'], keeps: ['All reservations unchanged.'] },
   {
     id: 'B', name: 'Plan B — Kuwohi Closed', short: 'Keep Newfound Gap if open, skip Kuwohi, more time at Cataract Falls & Gatlinburg', skip: ['kuwohi'], extend: { cataract: 20, downtown: 40 },
-    notes: ['Kuwohi skipped — enjoy other permitted scenic pullouts on US-441.', 'Extra time goes to Cataract Falls (+20 min) and downtown Gatlinburg (+40 min).'], keeps: ['Anakeesta, coaster and Park Grill reservations unchanged.'],
+    notes: ['Kuwohi skipped — enjoy other permitted scenic pullouts on US-441.', 'Extra time goes to Cataract Falls (+20 min) and downtown Gatlinburg (+40 min).'], keeps: ['Anakeesta and coaster tickets unchanged; dinner at Spice Express unchanged.'],
   },
   {
     id: 'C', name: 'Plan C — US-441 Closed', short: 'No mountain crossing. Verified open highway to Gatlinburg; prioritize downtown, Anakeesta & coaster', skip: ['ocon', 'ngap', 'kuwohi', 'cataract'], morningVia: 'around', extend: { downtown: 60 },
     notes: ['Oconaluftee, Newfound Gap, Kuwohi and Cataract Falls skipped.', 'Let Google Maps route around the closure (OSRM: ≈ 5 h 42 min via Asheville/I-40) — verify it is open.', 'Optional: Gatlinburg SkyPark if time and budget allow.'],
-    keeps: ['Anakeesta, coaster and Park Grill reservations unchanged.', 'Parking tag not needed if you don’t park inside the park.'],
+    keeps: ['Anakeesta and coaster tickets unchanged; dinner at Spice Express unchanged.', 'Parking tag not needed if you don’t park inside the park.'],
   },
 ]
 export const SKYPARK = { tickets: 'https://www.gatlinburgskypark.com/tickets', maps: search('Gatlinburg SkyPark 765 Parkway Gatlinburg TN') }
@@ -350,7 +361,7 @@ export const BUDGET: BudgetLine[] = [
   { id: 'dpark', label: 'Downtown parking', cat: 'Parking', low: 12, high: 25 },
   { id: 'bfast', label: 'Breakfast / snacks', cat: 'Food', low: 25, high: 45 },
   { id: 'lunch', label: 'Lunch', cat: 'Food', low: 60, high: 100 },
-  { id: 'dinner', label: 'Dinner', cat: 'Food', low: 100, high: 160 },
+  { id: 'dinner', label: 'Dinner (Spice Express)', cat: 'Food', low: 80, high: 120 },
   { id: 'fuel', label: 'Fuel', cat: 'Fuel', low: 45, high: 75 },
 ]
 export interface Expense { id: string; label: string; amount: number; cat: ExpenseCat; paidBy: string; at: number }
@@ -361,7 +372,7 @@ export const CHECKLIST: Record<string, string[]> = {
   Car: ['Fuel', 'Tire pressure', 'Insurance', 'Phone charger', 'Offline maps', 'Emergency supplies'],
   Clothing: ['Warm jacket', 'Layers', 'Hiking shoes', 'Gloves', 'Rain protection'],
   Personal: ['Water', 'Snacks', 'Phone', 'Power bank', 'Wallet', 'Camera', 'Sunglasses'],
-  Bookings: ['Anakeesta tickets', 'Coaster tickets', 'Park parking tag printed', 'Dinner reservation', 'Booking screenshots'],
+  Bookings: ['Anakeesta tickets', 'Coaster tickets', 'Park parking tag printed', 'Restaurant hours & seating confirmed (call)', 'Booking screenshots'],
   'Before Leaving': ['Weather checked', 'Roads checked', 'Drivers rested', 'Departure time confirmed', 'Route downloaded'],
   'Return (Sun)': ['Refuel if required', 'Final mileage noted', 'Return photos taken', 'Belongings collected'],
 }
@@ -405,9 +416,9 @@ Check our live trip itinerary, maps, booking statuses and plans:
 ${SITE_URL}`
 
 export const FULL_ROUTE = {
-  all: dir('Gainesville, GA', 'Gainesville, GA', ['Oconaluftee Visitor Center, Cherokee, NC', 'Newfound Gap, TN', 'Kuwohi Observation Tower', 'Sugarlands Visitor Center, Gatlinburg, TN', 'Anakeesta, Gatlinburg, TN', 'The Park Grill, Gatlinburg, TN']),
+  all: dir('Gainesville, GA', 'Gainesville, GA', ['Oconaluftee Visitor Center, Cherokee, NC', 'Newfound Gap, TN', 'Kuwohi Observation Tower', 'Sugarlands Visitor Center, Gatlinburg, TN', 'Anakeesta, Gatlinburg, TN', 'Spice Express Indian Kitchen, Pigeon Forge, TN']),
   morning: dir('Oconaluftee Visitor Center, Cherokee, NC', 'Gainesville, GA'),
   scenic: dir('Sugarlands Visitor Center, Gatlinburg, TN', 'Oconaluftee Visitor Center, Cherokee, NC', ['Newfound Gap, TN', 'Kuwohi Observation Tower']),
-  afternoon: dir('The Park Grill, 1110 Parkway, Gatlinburg, TN', 'Sugarlands Visitor Center, Gatlinburg, TN', ['Anakeesta, 576 Parkway, Gatlinburg, TN', 'Moonshine Mountain Coaster, 306 Parkway, Gatlinburg, TN']),
-  home: 'https://www.google.com/maps/dir/?api=1&origin=Gatlinburg%2C+TN&destination=Gainesville%2C+GA&travelmode=driving',
+  afternoon: dir('Spice Express Indian Kitchen, 3784 Parkway #101, Pigeon Forge, TN', 'Sugarlands Visitor Center, Gatlinburg, TN', ['Anakeesta, 576 Parkway, Gatlinburg, TN', 'Moonshine Mountain Coaster, 306 Parkway, Gatlinburg, TN']),
+  home: dir('Gainesville, GA', 'Spice Express Indian Kitchen, 3784 Parkway #101, Pigeon Forge, TN'),
 }

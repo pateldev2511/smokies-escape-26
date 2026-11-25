@@ -11,7 +11,7 @@ const INK = ['#E8B86D', '#7FC8A9', '#9DB4E0', '#E59A8C']
 
 function Stamp({ s, i, earned }: { s: Projected; i: number; earned: boolean }) {
   const color = INK[i % INK.length]
-  const name = s.id === 'home' ? 'HOME SAFE' : s.title.replace('Gatlinburg Lunch & Downtown', 'GATLINBURG').replace('Dinner at The Park Grill', 'PARK GRILL').replace('Kuwohi Observation Tower', 'KUWOHI').replace('Oconaluftee Visitor Center', 'OCONA- LUFTEE').replace('Moonshine Mountain Coaster', 'MOONSHINE').replace('Depart Gainesville', 'WHEELS UP').toUpperCase()
+  const name = s.id === 'home' ? 'HOME SAFE' : s.title.replace('Gatlinburg Lunch & Downtown', 'GATLINBURG').replace('Dinner at Spice Express Indian Kitchen', 'SPICE EXPRESS').replace('Kuwohi Observation Tower', 'KUWOHI').replace('Oconaluftee Visitor Center', 'OCONA- LUFTEE').replace('Moonshine Mountain Coaster', 'MOONSHINE').replace('Depart Gainesville', 'WHEELS UP').toUpperCase()
   return (
     <div className={`stamp aspect-square w-full p-2 ${earned ? 'stamp-in' : 'opacity-25'}`} style={{ color: earned ? color : 'var(--ink-2)', ['--r' as string]: `${ROT[i]}deg`, borderStyle: earned ? 'solid' : 'dashed', animationDelay: `${i * 60}ms` }}>
       <div className="flex h-full w-full flex-col items-center justify-center rounded-full border border-current/60 p-1.5">

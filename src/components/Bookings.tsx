@@ -12,8 +12,9 @@ export const TONE: Record<BookingStatus, string> = {
   Confirmed: 'bg-emerald-400 text-forest border-transparent',
   Cancelled: 'border-[var(--line-strong)] text-[var(--ink-2)]',
   'Not required': 'border-[var(--line-strong)] text-[var(--ink-2)]',
+  'Holiday hours / seating to confirm': 'bg-sunset text-forest border-transparent',
 }
-const ICON: Record<BookingStatus, typeof CheckCircle2> = { 'Not booked': CircleDashed, 'Booking in progress': Loader, Confirmed: CheckCircle2, Cancelled: XCircle, 'Not required': CheckCircle2 }
+const ICON: Record<BookingStatus, typeof CheckCircle2> = { 'Not booked': CircleDashed, 'Booking in progress': Loader, Confirmed: CheckCircle2, Cancelled: XCircle, 'Holiday hours / seating to confirm': Loader, 'Not required': CheckCircle2 }
 const PRI: Record<Booking['priority'], string> = { CRITICAL: 'text-red-400', HIGH: 'text-[var(--gold)]', MEDIUM: 'text-mist', REQUIRED: 'text-[var(--gold)]' }
 
 export function bookingProgress(bookings: Booking[], rentalStatus: BookingStatus) {

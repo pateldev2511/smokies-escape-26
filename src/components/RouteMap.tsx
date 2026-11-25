@@ -77,8 +77,8 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
       L.marker([geo.lat, geo.lng], { icon, title: String(title) }).bindPopup(`<div style="padding:12px 14px"><div style="font:800 15px 'Plus Jakarta Sans'">${esc(String(title))}</div><div style="color:var(--ink-2);margin:4px 0 10px">${esc(String(addr))}</div><a class="btn btn-gold btn-sm" target="_blank" rel="noopener" href="${esc(url)}">Navigate</a></div>`, { maxWidth: 240, minWidth: 240 }).addTo(layer.current!)
       all.push([geo.lat, geo.lng])
     })
-    const park: L.LatLngExpression[] = [[PLACES.ocon.lat, PLACES.ocon.lng], [PLACES.kuwohi.lat, PLACES.kuwohi.lng], [PLACES.grill.lat, PLACES.grill.lng], [PLACES.coaster.lat, PLACES.coaster.lng]]
-    const town: L.LatLngExpression[] = [[PLACES.grill.lat, PLACES.grill.lng], [PLACES.coaster.lat, PLACES.coaster.lng], [PLACES.anak.lat, PLACES.anak.lng], [PLACES.sugar.lat, PLACES.sugar.lng]]
+    const park: L.LatLngExpression[] = [[PLACES.ocon.lat, PLACES.ocon.lng], [PLACES.kuwohi.lat, PLACES.kuwohi.lng], [PLACES.spice.lat, PLACES.spice.lng], [PLACES.coaster.lat, PLACES.coaster.lng]]
+    const town: L.LatLngExpression[] = [[PLACES.spice.lat, PLACES.spice.lng], [PLACES.coaster.lat, PLACES.coaster.lng], [PLACES.anak.lat, PLACES.anak.lng], [PLACES.sugar.lat, PLACES.sugar.lng]]
     map.current.fitBounds(L.latLngBounds(view === 'all' ? all : view === 'town' ? town : park), { padding: [30, 30] })
   }, [stops, view, rental])
 

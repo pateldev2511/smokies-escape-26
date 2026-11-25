@@ -180,7 +180,7 @@ export function Footer() {
             <li>Map © OpenStreetMap contributors · Weather & elevation © Open-Meteo (CC BY 4.0) · Topographic texture generated for this site.</li>
           </ul>
         </details>
-        <p className="ink2 mt-6 text-[0.7rem]">Not affiliated with the National Park Service, Anakeesta, Moonshine Mountain Coaster or The Park Grill.</p>
+        <p className="ink2 mt-6 text-[0.7rem]">Not affiliated with the National Park Service, Anakeesta, Moonshine Mountain Coaster or Spice Express Indian Kitchen.</p>
       </div>
     </footer>
   )

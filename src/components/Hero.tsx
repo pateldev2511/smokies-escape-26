@@ -123,7 +123,7 @@ export function HeroSection() {
 const EXPERIENCES = [
   { k: 'kview' as const, n: '01', title: 'Scenic Smoky Mountains', text: 'Oconaluftee meadows, the Newfound Gap state line and the 6,643-ft summit of Kuwohi — then a forest walk to Cataract Falls.', href: '#stop-ngap', meta: '7:45 AM – 12:30 PM · +5,396 ft' },
   { k: 'anak' as const, n: '02', title: 'Anakeesta Adventure', text: 'Ride above Gatlinburg to a mountaintop village of skywalks, viewpoints and holiday lights — timed for sunset.', href: '#stop-anakeesta', meta: '2:30 – 6:15 PM · timed entry' },
-  { k: 'night' as const, n: '03', title: 'Gatlinburg After Dark', text: 'A moonshine-themed mountain coaster in the dark, then steaks at a rustic lodge before the long drive home.', href: '#stop-coaster', meta: '6:15 – 8:30 PM' },
+  { k: 'night' as const, n: '03', title: 'Gatlinburg After Dark', text: 'A moonshine-themed mountain coaster in the dark, then an Indian dinner in Pigeon Forge on the way home.', href: '#stop-coaster', meta: '6:15 – 9:00 PM' },
 ]
 
 export function Experiences() {

@@ -26,7 +26,7 @@ function profile(stops: Projected[], planId: string): Pt[] {
     const prev = act[i - 1]
     // Real topography en route: Kuwohi → Sugarlands and the night drive over the park both cross Newfound Gap (5,046 ft)
     if ((prev.place === 'kuwohi' && s.place === 'sugar') || (s.id === 'home' && planId !== 'C')) {
-      const tGap = addMin(prev.pEnd, s.id === 'home' ? 32 : 26)
+      const tGap = addMin(prev.pEnd, s.id === 'home' ? 50 : 26)
       pts.push({ t: tGap, ft: PLACES.ngap.elevFt, place: 'ngap', label: 'via Newfound Gap' })
     }
     pts.push({ t: s.arrive > s.pStart ? s.pStart : addMin(s.pStart, 0), ft, place: s.place, stop: s })

@@ -101,7 +101,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
                   {s.id === 'home' ? `Leave ${fmt(trip ? addMin(s.pStart, -s.driveIn) : s.plannedStart)}` : `${fmt(start)}${s.id === 'depart' ? '' : ` – ${fmt(end)}`}`}
                 </div>
                 <div className="ink2 mt-0.5 text-xs">
-                  {s.id === 'home' ? `Arrive ≈ ${fmt(trip ? s.pStart : addMin(s.plannedStart, ROUTE_ALTERNATIVES.overPark.min), true)} before stops · target 1:00–2:00 AM Sat` : `${dur(totalMin)}${s.travelIn ? ` incl. ≈ ${s.travelIn}-min ${s.place === 'coaster' ? 'walk' : 'drive'}` : ''}`}
+                  {s.id === 'home' ? `Arrive ≈ ${fmt(trip ? s.pStart : addMin(s.plannedStart, ROUTE_ALTERNATIVES.overPark.min), true)} before stops · target ≈ 1:30–3:00 AM Sun` : `${dur(totalMin)}${s.travelIn ? ` incl. ≈ ${s.travelIn}-min ${s.place === 'coaster' ? 'walk' : 'drive'}` : ''}`}
                   {trip && s.delta !== 0 && !skipped && <span className={s.delta > 0 ? ' text-[var(--gold)]' : ' text-emerald-400'}> · {s.delta > 0 ? '+' : ''}{dur(s.delta)} vs plan</span>}
                   {s.edited && ' · edited'}
                 </div>
