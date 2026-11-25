@@ -1,5 +1,5 @@
 import {
-  AlertTriangle, Car, Check, ChevronDown, Clock, CloudSun, DollarSign, Flag, Footprints, Gauge, Lock, MapPin, Mountain, Navigation,
+  AlertTriangle, Car, Check, ChevronDown, Clock, CloudSun, DollarSign, Flag, Footprints, Gauge, Lock, MapPin, Mountain, Navigation, Phone,
   RotateCcw, Share2, SkipForward, Ticket, TimerReset, TreePine, Utensils, Zap, Landmark,
 } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
@@ -49,7 +49,7 @@ function Classification({ s }: { s: Projected }) {
         <Lock size={11} /> Fixed · confirmed {fmt(s.fixedAt)}
       </span>
     )
-  if (s.bookingId) return <span className="chip !border-sunset/50 !text-[var(--gold)]">Target · needs booking</span>
+  if (s.bookingId) return <span className="chip !border-sunset/50 !text-[var(--gold)]">{s.booking?.url.startsWith('tel:') ? 'Target · call to confirm' : 'Target · needs booking'}</span>
   if (s.optional) return <span className="chip">Optional</span>
   return <span className="chip">Flexible</span>
 }
@@ -146,7 +146,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
             <div className="no-print mt-4 flex flex-wrap gap-2">
               <ExtLink href={s.navUrl} className="btn btn-gold btn-sm"><Navigation size={15} /> Navigate</ExtLink>
               <ExtLink href={s.mapsUrl}><MapPin size={15} /> Maps</ExtLink>
-              {booking && <ExtLink href={booking.url} className="btn btn-ghost btn-sm !border-sunset/60"><Ticket size={15} /> {booking.cta.length > 18 ? 'Book' : booking.cta}</ExtLink>}
+              {booking && <ExtLink href={booking.url} className="btn btn-ghost btn-sm !border-sunset/60">{booking.url.startsWith('tel:') ? <Phone size={15} /> : <Ticket size={15} />} {booking.url.startsWith('tel:') ? 'Call' : booking.cta.length > 18 ? 'Book' : booking.cta}</ExtLink>}
               <button className="btn btn-ghost btn-sm" onClick={() => shareStop(s)} aria-label={`Share ${s.title}`}><Share2 size={15} /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
                 Details <ChevronDown size={15} className={open ? 'rotate-180' : ''} />
