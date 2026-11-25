@@ -1,12 +1,12 @@
 import { Snowflake } from 'lucide-react'
 import { ROAD_STATUS_URL } from '../data/trip'
-import { usePlan } from '../lib/engine'
+import { usePlanId } from '../lib/engine'
 import { summitRisk, useWeather } from '../lib/weather'
 
 /** Appears only when the live forecast shows snow/ice up high during the plan. */
 export function SummitAlert({ className = '' }: { className?: string }) {
   const { wx } = useWeather()
-  const [plan, setPlan] = usePlan()
+  const plan = usePlanId()
   const r = summitRisk(wx)
   if (!r) return null
   return (
@@ -15,8 +15,7 @@ export function SummitAlert({ className = '' }: { className?: string }) {
       <p className="ink2 mt-1">Snow or ice is what closes Kuwohi Road and Newfound Gap Road. This is a forecast, not a closure — check the NPS before leaving and again in Cherokee.</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <a className="btn btn-gold btn-sm" href={ROAD_STATUS_URL} target="_blank" rel="noopener noreferrer">Road status</a>
-        {plan === 'A' && <button className="btn btn-ghost btn-sm" onClick={() => setPlan('B')}>Preview Plan B (Kuwohi closed)</button>}
-        {plan !== 'A' && <button className="btn btn-ghost btn-sm" onClick={() => setPlan('A')}>Back to Plan A</button>}
+        <a className="btn btn-ghost btn-sm" href="#plans">{plan === 'A' ? 'See Plan B (Kuwohi closed)' : `Active: Plan ${plan}`}</a>
       </div>
     </div>
   )

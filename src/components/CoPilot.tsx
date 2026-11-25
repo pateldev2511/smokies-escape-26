@@ -1,10 +1,10 @@
 import { Check, Coffee, Flag, Moon, Navigation, SkipForward, Smartphone, CarFront, Sun, TimerReset, WifiOff, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { BOOKINGS } from '../data/trip'
 import { leaveBy, useLate, useStatus, useTrip } from '../lib/engine'
 import { useLocal } from '../lib/store'
 import { dur, fmt } from '../lib/time'
-import { useTravelers } from './Crew'
+import { useDoc } from '../lib/doc'
+import { AnnouncementBanner } from './Announcement'
 import { Photo, useNow } from './ui'
 import { SummitAlert } from './SummitAlert'
 
@@ -45,7 +45,7 @@ export function CoPilot({ onClose }: { onClose: () => void }) {
   const [late, setLate] = useLate()
   const [night, setNight] = useLocal<boolean>('night', false)
   const [shift, setShift] = useLocal<{ who: string; since: number } | null>('shift', null)
-  const travelers = useTravelers()
+  const travelers = useDoc().travelers
   const drivers = travelers.filter((t) => t.driver)
   const wake = useWakeLock(true)
   const online = useOnline()
@@ -65,7 +65,7 @@ export function CoPilot({ onClose }: { onClose: () => void }) {
   const lb = ci >= 0 ? leaveBy(stops, ci) : null
   const lbMin = lb ? Math.round((lb.by.getTime() - now) / 60000) : null
   const driving = shift ? Math.round((now - shift.since) / 60000) : 0
-  const nextBooking = next?.bookingId ? BOOKINGS.find((b) => b.id === next.bookingId) : undefined
+  const nextBooking = next?.booking
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Co-Pilot" className="fixed inset-0 z-[70] flex flex-col overflow-y-auto bg-[var(--bg)]" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -101,6 +101,7 @@ export function CoPilot({ onClose }: { onClose: () => void }) {
           <div className="panel p-6 text-center"><p className="display text-2xl">Home. What a day. 🏔️</p></div>
         )}
 
+        <AnnouncementBanner />
         <SummitAlert />
         {lb && (
           <div className={`rounded-[24px] p-5 ${lbMin! < 10 ? 'bg-red-500/20' : 'bg-sunset/15'}`}>

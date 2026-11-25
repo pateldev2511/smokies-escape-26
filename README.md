@@ -3,7 +3,18 @@
 **One Day. Four Friends. Endless Views.** — an offline-first trip companion for Friday, November 27, 2026:
 Gainesville, GA → Oconaluftee → Newfound Gap → Kuwohi → Cataract Falls → Gatlinburg → Anakeesta → Moonshine Mountain Coaster → The Park Grill → home.
 
-**Live:** https://pateldev2511.github.io/smokies-escape-26/
+**Traveler view (share this):** https://pateldev2511.github.io/smokies-escape-26/trip/smokies-2026/
+**Organizer dashboard (login):** https://pateldev2511.github.io/smokies-escape-26/admin/
+
+Schedule: Fri Nov 27 rental pickup 6 PM → Sat Nov 28 adventure (depart 3:30 AM) → Sun Nov 29 home ~1–2 AM, rental back by 10 AM.
+
+## Architecture
+- **Supabase** project `smokies-escape-26` (Postgres + Auth + Realtime + Storage).
+- `trip_drafts` (organizer only) → `publish_trip()` (SECURITY DEFINER, checks `is_organizer()`) → `published_itinerary` (public read-only, realtime).
+- `trip_private` + `private-files` bucket hold confirmation numbers, rental refs, notes and attachments — organizer only, never published.
+- Row Level Security enforces all of this on the server; the publishable key in `src/lib/doc.tsx` is meant to be public.
+- Organizers are listed in `public.organizers`. To add one, create the user in Supabase Auth and insert their `user_id`.
+- Travelers' Trip Mode check-ins, passport missions and photos stay on each phone.
 
 ## What makes it different
 | Feature | What it does |
@@ -12,7 +23,7 @@ Gainesville, GA → Oconaluftee → Newfound Gap → Kuwohi → Cataract Falls �
 | **Schedule engine** | Trip Mode re-projects the rest of the day from check-ins, skips and “running late”. Skips free time for flexible stops; meals/dawn/evening are anchored; booked times are fixed and conflicts are flagged — never silently moved. Uses an OSRM all-pairs drive matrix. |
 | **Co-Pilot** | Full-screen car mode: Now / Leave-by / Navigate Next, home ETA, driver-shift timer with a 2-hour swap warning, red night-drive mode, screen wake-lock, offline indicator. |
 | **Summit alert** | If the live forecast shows snow/ice at Kuwohi or Newfound Gap during the plan, a banner appears with road-status and a one-tap Plan B preview. |
-| **Crew Sync (no server)** | Shared state is a per-item last-writer-wins map, passed by link or QR (works with zero signal in the car). Private confirmation notes and photos never leave the device. |
+| **Live publishing** | The organizer saves drafts privately and publishes; every traveler page updates in about a second via Supabase Realtime (plus a 90-second fallback refresh). |
 | **Offline PWA** | Service worker precaches the app; viewed map tiles, fonts and the last forecast are cached with timestamps. Installable to the home screen. |
 | **Smokies Passport** | Stamps for completed stops, photo missions (photos stored in IndexedDB on the phone), and a generated 1080×1920 Trip Story card. |
 
@@ -23,9 +34,6 @@ Everything lives in [`src/data/trip.ts`](src/data/trip.ts): places (verified coo
 
 ## Data sources (no API keys)
 Open-Meteo forecast & elevation · OpenStreetMap tiles · OSRM (build-time drive estimates) · Wikidata / US Census geocoder / OSM Nominatim (coordinates) · Wikimedia Commons (photos, credited in the footer).
-
-## Optional: live shared backend
-Crew Sync covers four phones without a server. For automatic real-time sync, create a Supabase project with a `trip_kv(key text primary key, v jsonb, t bigint, by text)` table and RLS restricted to invited users, then replace `useShared` / `setShared` in `src/lib/store.ts` with reads/writes to that table (keep the same last-writer-wins rule on `t`).
 
 ## Run / deploy
 ```bash

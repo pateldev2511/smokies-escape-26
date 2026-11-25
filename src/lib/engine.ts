@@ -1,88 +1,85 @@
 import { useMemo } from 'react'
-import { BOOKINGS, DRIVE, PLACES, PLANS, ROUTE_ALTERNATIVES, STOPS, type BookingStatus, type PlanId, type Stop } from '../data/trip'
-import { useShared } from './store'
+import { DRIVE, PLACES, PLANS, ROUTE_ALTERNATIVES, type Booking, type PlanId, type Stop } from '../data/trip'
+import { useDoc } from './doc'
+import { getLocal, useLocal } from './store'
 import { addMin, at, diffMin } from './time'
 
 export type StopState = 'upcoming' | 'arrived' | 'done' | 'skipped'
 export interface StatusRec { s: StopState; at?: number }
-export interface BookingRec { status: BookingStatus; time?: string; guests?: number; cost?: string }
 
-export const usePlan = () => useShared<PlanId>('plan', 'A')
-export const useLate = () => useShared<number>('late', 0)
-export const useStatus = (id: string) => useShared<StatusRec>(`st:${id}`, { s: 'upcoming' })
-export const useBooking = (id: string) => useShared<BookingRec>(`bk:${id}`, { status: 'Not Booked', guests: BOOKINGS.find((b) => b.id === id)?.guests })
-export const useStartEdit = (id: string) => useShared<string | null>(`edit:${id}`, null)
+/** Personal trip-mode state lives on each phone (it never changes the shared trip). */
+export const useLate = () => useLocal<number>('late', 0)
+export const useStatus = (id: string) => useLocal<StatusRec>(`st:${id}`, { s: 'upcoming' })
+export const usePlanId = (): PlanId => useDoc().plan
+
+export interface PlaceInfo { lat: number; lng: number; elevFt: number; name: string; source: string }
+export function placeOf(s: Stop): PlaceInfo {
+  if (s.geo) return { lat: s.geo.lat, lng: s.geo.lng, elevFt: s.geo.elevFt ?? PLACES.downtown.elevFt, name: s.title, source: s.geo.source }
+  return PLACES[s.place] ?? PLACES.downtown
+}
+const drive = (a: Stop | undefined, b: Stop, fallback: number) => (a && !a.geo && !b.geo ? DRIVE[a.place]?.[b.place] : undefined) ?? fallback
 
 export interface Projected extends Stop {
   plannedStart: Date
   plannedEnd: Date
   onsiteMin: number
-  /** Projected (live) times — honour check-ins, skips, lateness and booked times. */
   pStart: Date
   pEnd: Date
   arrive: Date
   driveIn: number
   delta: number
   status: StatusRec
-  booking?: BookingRec
+  booking?: Booking
   fixedAt?: Date
   conflict?: number
   slack?: number
-  /** Free minutes before an anchored stop (time you can spend at the previous stop). */
   wait?: number
   edited: boolean
   planSkipped: boolean
 }
 
-/** Hook that reads all shared state and runs the schedule projection. */
 export function useTrip(now = Date.now()) {
-  const [planId] = usePlan()
+  const doc = useDoc()
   const [late] = useLate()
-  // read all statuses/bookings/edits (hooks in fixed order — STOPS is static)
-  const statuses = STOPS.map((s) => useStatus(s.id)[0]) // eslint-disable-line react-hooks/rules-of-hooks
-  const edits = STOPS.map((s) => useStartEdit(s.id)[0]) // eslint-disable-line react-hooks/rules-of-hooks
-  const bookings = Object.fromEntries(BOOKINGS.map((b) => [b.id, useBooking(b.id)[0]])) // eslint-disable-line react-hooks/rules-of-hooks
-  const key = JSON.stringify([planId, late, statuses, edits, bookings, Math.floor(now / 60000)])
+  useLocal('st:tick', 0) // re-render on any local status change
+  const statuses = doc.stops.map((s) => getLocal<StatusRec>(`st:${s.id}`, { s: 'upcoming' }))
+  const key = JSON.stringify([doc.plan, doc.tripDate, doc.stops, doc.bookings, late, statuses, Math.floor(now / 60000)])
 
   return useMemo(() => {
-    const plan = PLANS.find((p) => p.id === planId) ?? PLANS[0]
+    const plan = PLANS.find((p) => p.id === doc.plan) ?? PLANS[0]
     const out: Projected[] = []
-    let cursor = at(STOPS[0].start)
-    let prevPlace = STOPS[0].place
+    const stops = doc.stops.map((s, i) => ({ ...s, n: i + 1 }))
+    let cursor = at(stops[0]?.start ?? '03:30')
+    let prev: Stop | undefined
     let lateApplied = false
-    STOPS.forEach((s0, i) => {
+    stops.forEach((s, i) => {
       const status = statuses[i]
-      const planSkipped = plan.skip.includes(s0.id)
-      const edited = !!edits[i]
-      const s = s0
-      const plannedStart = at(edits[i] ?? s.start)
-      let plannedEnd = at(s.end)
-      if (edited) plannedEnd = addMin(plannedStart, diffMin(at(s.end), at(s.start)))
+      const planSkipped = plan.skip.includes(s.id)
+      const plannedStart = at(s.start)
+      const plannedEnd = at(s.end)
       const extra = plan.extend?.[s.id] ?? 0
       const onsiteMin = Math.max(5, diffMin(plannedEnd, plannedStart) - s.travelIn + extra)
-      const booking = s.bookingId ? bookings[s.bookingId] : undefined
-      const fixedAt = booking?.status === 'Booked' && booking.time ? at(booking.time) : undefined
+      const booking = doc.bookings.find((b) => b.id === s.bookingId)
+      const fixedAt = booking?.status === 'Confirmed' && booking.time ? at(booking.time) : undefined
+      const base = { ...s, plannedStart, plannedEnd, onsiteMin, booking, edited: false, planSkipped }
 
       if (i === 0) {
-        // departure
         const dep = status.s === 'done' && status.at ? new Date(status.at) : plannedStart
         cursor = dep
-        out.push({ ...s, plannedStart, plannedEnd, onsiteMin: 0, pStart: dep, pEnd: dep, arrive: dep, driveIn: 0, delta: diffMin(dep, plannedStart), status, booking, edited, planSkipped })
+        prev = s
+        out.push({ ...base, onsiteMin: 0, pStart: dep, pEnd: dep, arrive: dep, driveIn: 0, delta: diffMin(dep, plannedStart), status })
         return
       }
       if (planSkipped || status.s === 'skipped') {
-        out.push({ ...s, plannedStart, plannedEnd, onsiteMin, pStart: cursor, pEnd: cursor, arrive: cursor, driveIn: 0, delta: 0, status: planSkipped ? { s: 'skipped' } : status, booking, edited, planSkipped })
+        out.push({ ...base, pStart: cursor, pEnd: cursor, arrive: cursor, driveIn: 0, delta: 0, status: planSkipped ? { s: 'skipped' } : status })
         return
       }
-      // Plan C morning goes around the park
-      let driveIn = s.id === 'home' ? (plan.id === 'C' ? ROUTE_ALTERNATIVES.aroundPark.min : ROUTE_ALTERNATIVES.overPark.min) : DRIVE[prevPlace]?.[s.place] ?? s.travelIn
-      if (plan.morningVia === 'around' && prevPlace === 'gnv') driveIn = 342
-      const arrive = status.at && (status.s === 'arrived' || status.s === 'done') ? new Date(status.at) : addMin(cursor, driveIn)
-      // earliest on-site start = planned on-site start (we don't rush ahead — buffer is kept)
-      const plannedOnsite = addMin(plannedStart, s.travelIn)
+      let driveIn = s.id === 'home' ? (plan.id === 'C' ? ROUTE_ALTERNATIVES.aroundPark.min : ROUTE_ALTERNATIVES.overPark.min) : drive(prev, s, s.travelIn)
+      if (plan.morningVia === 'around' && prev?.place === 'gnv') driveIn = 342
       const checkedIn = status.s === 'arrived' || status.s === 'done'
+      const arrive = checkedIn && status.at ? new Date(status.at) : addMin(cursor, driveIn)
+      const plannedOnsite = addMin(plannedStart, s.travelIn)
       let pStart = checkedIn || !s.anchor ? arrive : new Date(Math.max(arrive.getTime(), plannedOnsite.getTime()))
-      // Unanchored stops never start *before* plan unless time was freed by a skip upstream
       if (!checkedIn && !s.anchor && !out.some((o) => o.status.s === 'skipped' && !o.planSkipped) && pStart < plannedOnsite && plan.id === 'A') pStart = plannedOnsite
       const wait = !checkedIn && s.anchor && plannedOnsite > arrive ? diffMin(plannedOnsite, arrive) : undefined
       if (!lateApplied && late && status.s !== 'done') {
@@ -97,33 +94,30 @@ export function useTrip(now = Date.now()) {
         pStart = new Date(Math.max(pStart.getTime(), fixedAt.getTime()))
       }
       const pEnd = status.s === 'done' && status.at ? new Date(status.at) : s.id === 'home' ? pStart : addMin(pStart, onsiteMin)
-      out.push({ ...s, plannedStart, plannedEnd, onsiteMin, pStart, pEnd, arrive, driveIn, delta: diffMin(pStart, plannedOnsite), status, booking, fixedAt, conflict, slack, wait, edited, planSkipped })
+      out.push({ ...base, pStart, pEnd, arrive, driveIn, delta: diffMin(pStart, plannedOnsite), status, fixedAt, conflict, slack, wait })
       cursor = pEnd
-      prevPlace = s.place
+      prev = s
     })
     const active = out.filter((s) => s.status.s !== 'skipped')
     const current = active.find((s) => s.status.s === 'arrived') ?? active.find((s) => s.status.s !== 'done' && s.pEnd.getTime() > now) ?? active.find((s) => s.status.s !== 'done')
     const next = current ? active[active.indexOf(current) + 1] : undefined
-    const home = out.at(-1)!
-    return { plan, stops: out, active, current, next, homeArrival: home.status.s === 'skipped' ? undefined : home.pStart }
+    const home = out.at(-1)
+    return { plan, stops: out, active, current, next, homeArrival: home && home.status.s !== 'skipped' ? home.pStart : undefined }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 }
 
-/** Latest time to leave `from` and still make the next booked stop. */
 export function leaveBy(stops: Projected[], fromIdx: number): { by: Date; target: Projected } | null {
   const rest = stops.slice(fromIdx + 1).filter((s) => s.status.s !== 'skipped')
   const fi = rest.findIndex((s) => s.fixedAt)
   if (fi < 0) return null
   const target = rest[fi]
   let t = target.fixedAt!
-  let place = target.place
+  let nxt: Stop = target
   for (let i = fi - 1; i >= 0; i--) {
-    t = addMin(t, -(DRIVE[rest[i].place]?.[place] ?? 0) - rest[i].onsiteMin)
-    place = rest[i].place
+    t = addMin(t, -drive(rest[i], nxt, nxt.travelIn) - rest[i].onsiteMin)
+    nxt = rest[i]
   }
-  t = addMin(t, -(DRIVE[stops[fromIdx].place]?.[place] ?? 0))
+  t = addMin(t, -drive(stops[fromIdx], nxt, nxt.travelIn))
   return { by: t, target }
 }
-
-export const elevOf = (s: Stop) => PLACES[s.place].elevFt

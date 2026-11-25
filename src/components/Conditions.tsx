@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, Eye, RefreshCw, Snowflake, Sunrise, Sunset, Wind, WifiOff, ExternalLink, ShieldAlert } from 'lucide-react'
 import { PLANS, ROAD_STATUS_URL, SAFETY, SKYPARK, WEATHER_POINTS } from '../data/trip'
-import { usePlan, useTrip } from '../lib/engine'
+import { usePlanId, useTrip } from '../lib/engine'
 import { fmt } from '../lib/time'
 import { hourAt, useWeather, WMO } from '../lib/weather'
 import { ExtLink, Note, Reveal, Section } from './ui'
@@ -109,13 +109,13 @@ export function WeatherDashboard() {
 }
 
 export function AlternatePlanSelector() {
-  const [planId, setPlan] = usePlan()
+  const planId = usePlanId()
   const { plan, stops, homeArrival } = useTrip()
   return (
-    <Section id="plans" index="07" kicker="Backup plans" title={<>When the mountain <span className="text-[var(--gold)]">says no.</span></>} intro="Switching recalculates the timeline, map, Ridgeline and Co-Pilot for everyone you sync with. Reservations are never changed.">
+    <Section id="plans" index="07" kicker="Backup plans" title={<>When the mountain <span className="text-[var(--gold)]">says no.</span></>} intro="The organizer picks the active plan and publishes it — everyone’s timeline, map, Ridgeline and Co-Pilot follow. Reservations are never changed.">
       <div className="grid gap-3 md:grid-cols-3" role="radiogroup">
         {PLANS.map((p) => (
-          <button key={p.id} role="radio" aria-checked={p.id === planId} onClick={() => setPlan(p.id)} className={`panel p-5 text-left transition-colors ${p.id === planId ? '!border-[var(--gold)] ring-1 ring-[var(--gold)]' : 'hover:border-[var(--line-strong)]'}`}>
+          <button key={p.id} role="radio" aria-checked={p.id === planId} aria-disabled="true" tabIndex={-1} className={`panel p-5 text-left transition-colors ${p.id === planId ? '!border-[var(--gold)] ring-1 ring-[var(--gold)]' : 'hover:border-[var(--line-strong)]'}`}>
             <div className="flex items-center justify-between">
               <span className="mono text-sm gold">PLAN {p.id}</span>
               {p.id === planId && <CheckCircle2 size={20} className="gold" />}

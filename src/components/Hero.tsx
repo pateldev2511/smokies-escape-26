@@ -1,11 +1,15 @@
 import { ArrowDown, Map, Route, Share2, Ticket } from 'lucide-react'
-import { STOPS } from '../data/trip'
+import { useDoc } from '../lib/doc'
+import { AnnouncementBanner, LiveBadge } from './Announcement'
 import { at, fmt } from '../lib/time'
 import { Photo, Reveal, useNow } from './ui'
 
-const DEPART = at(STOPS[0].start)
+
+export const tripDayLong = (d: string) => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'))
 
 export function TripCountdown() {
+  const doc = useDoc()
+  const DEPART = at(doc.stops[0]?.start ?? '03:30')
   const now = useNow(1000)
   const ms = DEPART.getTime() - now
   if (ms <= 0) {
@@ -32,14 +36,15 @@ export function TripCountdown() {
           </div>
         ))}
       </div>
-      <p className="mono mt-2 text-[0.68rem] tracking-wider text-cream/60">T-MINUS TO WHEELS-UP · FRI NOV 27 · {fmt(DEPART)} ET</p>
+      <p className="mono mt-2 text-[0.68rem] tracking-wider text-cream/60">T-MINUS TO WHEELS-UP · {fmt(DEPART, true).toUpperCase()} · {doc.tripDate.slice(5).replace('-', '/')} ET</p>
     </div>
   )
 }
 
-const STATS: [string, string][] = [['4', 'Travelers'], ['1', 'Car'], ['2', 'Drivers'], ['8', 'Main stops']]
+const STATS: [string, string][] = [['4', 'Travelers'], ['1', 'Rental car'], ['2', 'Drivers'], ['3', 'Days']]
 
 export function HeroSection() {
+  const doc = useDoc()
   return (
     <header id="home" className="relative isolate flex min-h-[100svh] flex-col overflow-hidden text-cream">
       <Photo k="hero" eager sizes="100vw" alt="Layered blue ridgelines of the Great Smoky Mountains at sunrise from the Oconaluftee Valley Overlook" className="absolute inset-0 -z-20 scale-105" />
@@ -55,8 +60,10 @@ export function HeroSection() {
       </div>
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-end px-4 pt-24 pb-8 sm:px-6 sm:pb-14">
+        <AnnouncementBanner />
+        <div className="mb-3"><LiveBadge /></div>
         <p className="rise mono text-[0.72rem] tracking-[0.2em] text-sunset" style={{ animationDelay: '.1s' }}>
-          35.5628° N · 83.4986° W · 6,643 FT — FRIDAY, NOVEMBER 27, 2026
+          35.5628° N · 83.4986° W · 6,643 FT — {tripDayLong(doc.tripDate).toUpperCase()}
         </p>
         <h1 className="rise display mt-3 text-[3.6rem] leading-[0.86] sm:text-8xl lg:text-[9.5rem]" style={{ animationDelay: '.2s' }}>
           SMOKIES
@@ -67,7 +74,7 @@ export function HeroSection() {
           One Day. Four Friends. Endless Views.
         </p>
         <p className="rise mono mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.75rem] text-cream/75" style={{ animationDelay: '.45s' }}>
-          GAINESVILLE <span className="text-sunset">→</span> SMOKY MOUNTAINS <span className="text-sunset">→</span> GATLINBURG <span className="text-sunset">→</span> GAINESVILLE
+          FRI RENTAL <span className="text-sunset">→</span> SAT GAINESVILLE <span className="text-sunset">→</span> SMOKY MOUNTAINS <span className="text-sunset">→</span> GATLINBURG <span className="text-sunset">→</span> SUN HOME & RETURN
         </p>
 
         <div className="rise mt-6 grid grid-cols-4 gap-2 sm:max-w-xl" style={{ animationDelay: '.55s' }}>

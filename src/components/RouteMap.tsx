@@ -2,8 +2,9 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect, useRef } from 'react'
 import { IMAGES } from '../data/images'
-import { BOOKINGS, PLACES } from '../data/trip'
-import { useTrip } from '../lib/engine'
+import { PLACES } from '../data/trip'
+import { useDoc } from '../lib/doc'
+import { placeOf, useTrip } from '../lib/engine'
 import { fmt } from '../lib/time'
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
@@ -15,6 +16,7 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
   const tiles = useRef<L.TileLayer | null>(null)
   const layer = useRef<L.LayerGroup | null>(null)
   const { stops } = useTrip()
+  const { rental } = useDoc()
 
   useEffect(() => {
     if (!el.current || map.current) return
@@ -42,7 +44,7 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
     const placed = new Set<string>()
     const all: L.LatLngExpression[] = []
     stops.forEach((s) => {
-      const p = PLACES[s.place]
+      const p = placeOf(s)
       const k = `${p.lat},${p.lng}`
       if (placed.has(k)) return
       placed.add(k)
@@ -50,7 +52,7 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
       const label = s.place === 'gnv' ? 'GA' : String(s.n)
       const icon = L.divIcon({ className: '', html: `<div class="mk ${cls}"><span>${label}</span></div>`, iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -18] })
       const img = s.image && IMAGES[s.image] ? `<img src="${BASE}img/${IMAGES[s.image]!.file}-800.webp" alt="" style="width:100%;height:110px;object-fit:cover" loading="lazy">` : ''
-      const b = s.bookingId ? BOOKINGS.find((x) => x.id === s.bookingId) : undefined
+      const b = s.booking
       const title = s.place === 'gnv' ? 'Gainesville, GA — start & finish' : s.title
       const time = s.place === 'gnv' ? `Depart ${fmt(s.plannedStart)} · back ~1–2 AM` : `${fmt(s.pStart)} – ${fmt(s.pEnd)}`
       const html = `${img}<div style="padding:12px 14px">
@@ -66,10 +68,19 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
       L.marker([p.lat, p.lng], { icon, title, alt: title, keyboard: true }).bindPopup(html, { maxWidth: 240, minWidth: 240 }).addTo(layer.current!)
       all.push([p.lat, p.lng])
     })
+    // Rental pickup / return pins — only once the organizer has entered (and geocoded) real addresses
+    ;[['P', 'Rental pickup · Fri 6:00 PM', rental.pickupGeo, rental.pickupAddress], ['R', `Rental return · by ${rental.returnBy.slice(11)} Sun`, rental.returnGeo, rental.returnAddress]].forEach(([lbl, title, g, addr]) => {
+      const geo = g as typeof rental.pickupGeo
+      if (!geo) return
+      const icon = L.divIcon({ className: '', html: `<div class="mk" style="background:#9DB4E0"><span>${lbl}</span></div>`, iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -18] })
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(String(addr))}&travelmode=driving`
+      L.marker([geo.lat, geo.lng], { icon, title: String(title) }).bindPopup(`<div style="padding:12px 14px"><div style="font:800 15px 'Plus Jakarta Sans'">${esc(String(title))}</div><div style="color:var(--ink-2);margin:4px 0 10px">${esc(String(addr))}</div><a class="btn btn-gold btn-sm" target="_blank" rel="noopener" href="${esc(url)}">Navigate</a></div>`, { maxWidth: 240, minWidth: 240 }).addTo(layer.current!)
+      all.push([geo.lat, geo.lng])
+    })
     const park: L.LatLngExpression[] = [[PLACES.ocon.lat, PLACES.ocon.lng], [PLACES.kuwohi.lat, PLACES.kuwohi.lng], [PLACES.grill.lat, PLACES.grill.lng], [PLACES.coaster.lat, PLACES.coaster.lng]]
     const town: L.LatLngExpression[] = [[PLACES.grill.lat, PLACES.grill.lng], [PLACES.coaster.lat, PLACES.coaster.lng], [PLACES.anak.lat, PLACES.anak.lng], [PLACES.sugar.lat, PLACES.sugar.lng]]
     map.current.fitBounds(L.latLngBounds(view === 'all' ? all : view === 'town' ? town : park), { padding: [30, 30] })
-  }, [stops, view])
+  }, [stops, view, rental])
 
   return <div ref={el} className="h-[460px] w-full sm:h-[600px]" role="region" aria-label="Interactive trip map" />
 }

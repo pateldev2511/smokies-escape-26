@@ -12,20 +12,21 @@ import { Passport } from './components/Passport'
 import { Ridgeline } from './components/Ridgeline'
 import { BottomNav, Footer, ShareTrip, TopBar } from './components/Shell'
 import { InteractiveTimeline } from './components/Timeline'
-import { Toast } from './components/ui'
-import { mergePayload, useLocal } from './lib/store'
+import { DocProvider, usePublished, useDocMeta } from './lib/doc'
+import { useLocal } from './lib/store'
 
 interface BIPEvent extends Event { prompt: () => Promise<void> }
 
 function InstallCard() {
   const [evt, setEvt] = useState<BIPEvent | null>(null)
-  const standalone = typeof window !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone)
+  const standalone = matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone
   useEffect(() => {
     const f = (e: Event) => (e.preventDefault(), setEvt(e as BIPEvent))
     addEventListener('beforeinstallprompt', f)
     return () => removeEventListener('beforeinstallprompt', f)
   }, [])
-  if (standalone) return null
+  const { mode } = useDocMeta()
+  if (standalone || mode === 'preview') return null
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent)
   return (
     <div className="mx-auto max-w-6xl px-4 pb-6 sm:px-6">
@@ -33,7 +34,7 @@ function InstallCard() {
         <Smartphone size={30} className="gold shrink-0" />
         <div className="flex-1">
           <p className="display text-lg">Install it — it works with no signal</p>
-          <p className="ink2 text-sm">Cell service in the park is patchy. Installed, the whole app (itinerary, map tiles you’ve viewed, last forecast) opens offline. {ios ? 'iPhone: tap Share → “Add to Home Screen”.' : ''}</p>
+          <p className="ink2 text-sm">Cell service in the park is patchy. Installed, the app and the latest itinerary you opened work offline; it refreshes itself when you’re back in coverage. {ios ? 'iPhone: Share → “Add to Home Screen”.' : ''}</p>
         </div>
         {evt && <button className="btn btn-gold btn-sm" onClick={() => evt.prompt().then(() => setEvt(null))}><Download size={15} /> Install</button>}
       </div>
@@ -41,39 +42,18 @@ function InstallCard() {
   )
 }
 
-export default function App() {
+/** The traveler experience. Read-only: all trip data comes from the provider. */
+export function TravelerSite() {
   const [theme, setTheme] = useLocal<'dark' | 'light'>('theme', 'dark')
   const [pilot, setPilot] = useState(() => location.hash === '#copilot')
-  const [toast, setToast] = useState<string | null>(null)
-  const clearToast = useCallback(() => setToast(null), [])
-
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#10251F' : '#F7F5EF')
   }, [theme])
-
-  useEffect(() => {
-    const handle = () => {
-      const m = location.hash.match(/^#sync=(.+)$/)
-      if (!m) return
-      try {
-        const r = mergePayload(m[1])
-        setToast(r.changed ? `Merged ${r.changed} update${r.changed > 1 ? 's' : ''} from ${r.from} ✓` : `Already up to date with ${r.from}`)
-      } catch (e) {
-        setToast(String((e as Error).message))
-      }
-      history.replaceState(null, '', location.pathname)
-    }
-    handle()
-    addEventListener('hashchange', handle)
-    return () => removeEventListener('hashchange', handle)
-  }, [])
-
   const openPilot = useCallback(() => setPilot(true), [])
   return (
     <>
       <a href="#timeline" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[90] focus:rounded-xl focus:bg-sunset focus:px-4 focus:py-2 focus:text-forest">Skip to itinerary</a>
-      <Toast msg={toast} onDone={clearToast} />
       <TopBar theme={theme} setTheme={setTheme} onCoPilot={openPilot} />
       <HeroSection />
       <main>
@@ -95,5 +75,14 @@ export default function App() {
       <BottomNav />
       {pilot && <CoPilot onClose={() => (setPilot(false), location.hash === '#copilot' && history.replaceState(null, '', location.pathname))} />}
     </>
+  )
+}
+
+export default function App() {
+  const ctx = usePublished()
+  return (
+    <DocProvider value={ctx}>
+      <TravelerSite />
+    </DocProvider>
   )
 }

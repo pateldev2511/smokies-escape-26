@@ -8,7 +8,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const list = await fetch(scope + 'precache.json', { cache: 'no-store' }).then((r) => r.json()).catch(() => [])
     const c = await caches.open(SHELL)
-    await c.addAll(['./', ...list].map((p) => new URL(p, scope).href))
+    await c.addAll(['./', './trip/smokies-2026/', ...list].map((p) => new URL(p, scope).href))
     self.skipWaiting()
   })())
 })
@@ -24,7 +24,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url)
   // App navigation: network first, fall back to cached shell
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then((r) => { caches.open(SHELL).then((c) => c.put(scope, r.clone())); return r }).catch(() => caches.match(scope, { ignoreVary: true })))
+    if (url.pathname.includes('/admin')) return // organizer dashboard is always online
+    e.respondWith(fetch(req).then((r) => { const copy = r.clone(); caches.open(SHELL).then((c) => c.put(req, copy)); return r })
+      .catch(async () => (await caches.match(req, { ignoreVary: true, ignoreSearch: true })) || caches.match(new URL('./trip/smokies-2026/', scope).href, { ignoreVary: true })))
     return
   }
   // Same-origin static assets: cache first

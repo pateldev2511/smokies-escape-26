@@ -1,7 +1,8 @@
 import { Moon, Mountain, Navigation, Sun, Thermometer } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { PLACES, WEATHER_POINTS, type PlaceId } from '../data/trip'
-import { useTrip, type Projected } from '../lib/engine'
+import { placeOf, useTrip, type Projected } from '../lib/engine'
+import { getTripDate } from '../lib/time'
 import { skyFor, sunAltitude, sunTimes } from '../lib/sun'
 import { addMin, at, diffMin, fmt } from '../lib/time'
 import { hourAt, useWeather, WMO } from '../lib/weather'
@@ -20,7 +21,7 @@ function profile(stops: Projected[], planId: string): Pt[] {
   const pts: Pt[] = []
   const act = stops.filter((s) => s.status.s !== 'skipped')
   act.forEach((s, i) => {
-    const ft = PLACES[s.place].elevFt
+    const ft = placeOf(s).elevFt
     if (i === 0) return void pts.push({ t: s.pStart, ft, place: s.place, stop: s })
     const prev = act[i - 1]
     // Real topography en route: Kuwohi → Sugarlands and the night drive over the park both cross Newfound Gap (5,046 ft)
@@ -57,7 +58,7 @@ export function Ridgeline() {
   const a = pts[i - 1], b = pts[i]
   const f = Math.min(1, Math.max(0, (t.getTime() - a.t.getTime()) / Math.max(1, b.t.getTime() - a.t.getTime())))
   const ft = Math.round(a.ft + (b.ft - a.ft) * f)
-  const pa = PLACES[a.place], pb = PLACES[b.place]
+  const pa = a.stop ? placeOf(a.stop) : PLACES[a.place], pb = b.stop ? placeOf(b.stop) : PLACES[b.place]
   const lat = pa.lat + (pb.lat - pa.lat) * f, lng = pa.lng + (pb.lng - pa.lng) * f
   const alt = sunAltitude(t, lat, lng)
   const sky = skyFor(alt)
@@ -69,7 +70,7 @@ export function Ridgeline() {
   // forecast at this hour at the nearest weather point
   const near = WEATHER_POINTS.map((w) => ({ w, d: Math.hypot(PLACES[w.place].lat - lat, PLACES[w.place].lng - lng) })).sort((p, q) => p.d - q.d)[0]
   const hr = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(t))
-  const fx = near.d < 0.35 && wx && wx.forDate === '2026-11-27' ? hourAt(wx.points.find((p) => p.id === near.w.id), hr) : undefined
+  const fx = near.d < 0.35 && wx && wx.forDate === getTripDate() ? hourAt(wx.points.find((p) => p.id === near.w.id), hr) : undefined
 
   const path = pts.map((p, k) => `${k ? 'L' : 'M'}${x(p.t).toFixed(1)} ${y(p.ft).toFixed(1)}`).join(' ')
   const area = `${path} L${x(pts.at(-1)!.t).toFixed(1)} ${H} L${x(pts[0].t).toFixed(1)} ${H} Z`
@@ -77,7 +78,7 @@ export function Ridgeline() {
   const ticks = ['04:00', '08:00', '12:00', '16:00', '20:00', '24:00']
 
   return (
-    <Section id="ridgeline" index="02" kicker="The Ridgeline" title={<>Your day, as the <span className="text-[var(--gold)]">mountain</span> sees it.</>} intro="Drag through Friday. The profile is real elevation (1,247 → 6,643 ft); the sky follows the true sun position for where you’ll be. Forecast appears for each hour once it’s available.">
+    <Section id="ridgeline" index="02" kicker="The Ridgeline" title={<>Your day, as the <span className="text-[var(--gold)]">mountain</span> sees it.</>} intro="Drag through Saturday. The profile is real elevation (1,247 → 6,643 ft); the sky follows the true sun position for where you’ll be. Forecast appears for each hour once it’s available.">
       <Reveal>
         <div className="overflow-hidden rounded-[30px] border border-[var(--line)] shadow-[var(--shadow)]">
           <div className="relative transition-[background] duration-500" style={{ background: `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 55%, ${sky[2]} 100%)` }}>
@@ -99,7 +100,7 @@ export function Ridgeline() {
               <path d={path} fill="none" stroke="#E8B86D" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
               {stops.filter((s) => s.status.s !== 'skipped' && s.id !== 'depart' && s.id !== 'home').map((s) => (
                 <g key={s.id}>
-                  <circle cx={x(s.pStart)} cy={y(PLACES[s.place].elevFt)} r="5" fill="#10251F" stroke="#E8B86D" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                  <circle cx={x(s.pStart)} cy={y(placeOf(s).elevFt)} r="5" fill="#10251F" stroke="#E8B86D" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                 </g>
               ))}
               <line x1={x(t)} x2={x(t)} y1="0" y2={H} stroke="#F7F5EF" strokeOpacity=".7" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />

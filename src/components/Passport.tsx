@@ -1,8 +1,9 @@
 import { Camera, Check, Download, Share2, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { PLACES, STOPS } from '../data/trip'
-import { useTrip, type Projected } from '../lib/engine'
-import { delPhoto, download, getPhoto, putPhoto, shrink, useShared } from '../lib/store'
+import type { Stop } from '../data/trip'
+import { placeOf, useTrip, type Projected } from '../lib/engine'
+import { delPhoto, download, getPhoto, putPhoto, shrink, useLocal } from '../lib/store'
+import { tripDayLong } from './Hero'
 import { Reveal, Section } from './ui'
 
 const ROT = [-9, 6, -4, 11, -7, 4, -12, 8, -5, 7]
@@ -16,14 +17,14 @@ function Stamp({ s, i, earned }: { s: Projected; i: number; earned: boolean }) {
       <div className="flex h-full w-full flex-col items-center justify-center rounded-full border border-current/60 p-1.5">
         <span className="mono text-[0.5rem] tracking-[0.18em] opacity-80">NOV 27 2026</span>
         <span className="display my-0.5 max-w-full text-[0.6rem] leading-tight break-words sm:text-xs">{name}</span>
-        <span className="mono text-[0.5rem] opacity-80">{PLACES[s.place].elevFt.toLocaleString()} FT</span>
+        <span className="mono text-[0.5rem] opacity-80">{placeOf(s).elevFt.toLocaleString()} FT</span>
       </div>
     </div>
   )
 }
 
 function Mission({ stop, i, text }: { stop: string; i: number; text: string }) {
-  const [done, setDone] = useShared<boolean>(`mis:${stop}:${i}`, false)
+  const [done, setDone] = useLocal<boolean>(`mis:${stop}:${i}`, false)
   const [url, setUrl] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const k = `mis-${stop}-${i}`
@@ -63,7 +64,7 @@ async function makeStory(stops: Projected[]): Promise<Blob> {
   g.fillStyle = bg; g.fillRect(0, 0, W, H)
   // photos collage
   const photos: ImageBitmap[] = []
-  for (const s of STOPS) for (let i = 0; i < s.missions.length && photos.length < 4; i++) {
+  for (const s of stops as Stop[]) for (let i = 0; i < s.missions.length && photos.length < 4; i++) {
     const b = await getPhoto(`mis-${s.id}-${i}`).catch(() => undefined)
     if (b) photos.push(await createImageBitmap(b))
   }
@@ -74,18 +75,18 @@ async function makeStory(stops: Projected[]): Promise<Blob> {
     g.save(); g.beginPath(); g.roundRect(x + 6, y + 6, cell - 12, cell * 0.75 - 12, 28); g.clip()
     g.drawImage(p, x + 6 + (cell - 12 - p.width * s) / 2, y + 6 + (cell * 0.75 - 12 - p.height * s) / 2, p.width * s, p.height * s); g.restore()
   })
-  g.fillStyle = '#E8B86D'; g.font = '600 30px "JetBrains Mono", monospace'; g.fillText('FRIDAY · NOVEMBER 27 · 2026', 60, 120)
+  g.fillStyle = '#E8B86D'; g.font = '600 30px "JetBrains Mono", monospace'; g.fillText(tripDayLong(stops[0] ? (stops[0].plannedStart.toISOString().slice(0, 10)) : '').toUpperCase(), 60, 120)
   g.fillStyle = '#F7F5EF'; g.font = '800 130px "Plus Jakarta Sans", sans-serif'; g.fillText('SMOKIES', 56, 260); g.fillText('ESCAPE ’26', 56, 390)
   // elevation ridge
   const act = stops.filter((s) => s.status.s !== 'skipped')
   const ry = photos.length ? 470 + Math.ceil(photos.length / 2) * cell * 0.75 + 60 : 520
   g.strokeStyle = '#E8B86D'; g.lineWidth = 6; g.lineJoin = 'round'; g.beginPath()
-  act.forEach((s, i) => { const x = 60 + (i / (act.length - 1)) * (W - 120), y = ry + 260 - (PLACES[s.place].elevFt / 7000) * 240; i ? g.lineTo(x, y) : g.moveTo(x, y) })
+  act.forEach((s, i) => { const x = 60 + (i / (act.length - 1)) * (W - 120), y = ry + 260 - (placeOf(s).elevFt / 7000) * 240; i ? g.lineTo(x, y) : g.moveTo(x, y) })
   g.stroke()
-  act.forEach((s, i) => { const x = 60 + (i / (act.length - 1)) * (W - 120), y = ry + 260 - (PLACES[s.place].elevFt / 7000) * 240; g.fillStyle = s.status.s === 'done' ? '#E8B86D' : '#B8C8C5'; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill() })
+  act.forEach((s, i) => { const x = 60 + (i / (act.length - 1)) * (W - 120), y = ry + 260 - (placeOf(s).elevFt / 7000) * 240; g.fillStyle = s.status.s === 'done' ? '#E8B86D' : '#B8C8C5'; g.beginPath(); g.arc(x, y, 11, 0, Math.PI * 2); g.fill() })
   // stats
   const done = act.filter((s) => s.status.s === 'done').length
-  const climbed = act.reduce((a, s, i) => (i ? a + Math.max(0, PLACES[s.place].elevFt - PLACES[act[i - 1].place].elevFt) : a), 0)
+  const climbed = act.reduce((a, s, i) => (i ? a + Math.max(0, placeOf(s).elevFt - placeOf(act[i - 1]).elevFt) : a), 0)
   const stats: [string, string][] = [[`${done}/${act.length}`, 'STOPS'], ['6,643', 'FT HIGH POINT'], [climbed.toLocaleString(), 'FT CLIMBED'], ['4', 'FRIENDS']]
   stats.forEach(([v, l], i) => {
     const x = 60 + (i % 2) * 490, y = ry + 380 + Math.floor(i / 2) * 170
@@ -99,7 +100,7 @@ async function makeStory(stops: Projected[]): Promise<Blob> {
     const ok = s.status.s === 'done'
     g.fillStyle = ok ? '#E8B86D' : 'rgba(184,200,197,.45)'; g.font = '600 30px "JetBrains Mono", monospace'; g.fillText(ok ? '✓' : '○', 60, ly)
     g.fillStyle = ok ? '#F7F5EF' : 'rgba(247,245,239,.55)'; g.font = '700 34px "Plus Jakarta Sans", sans-serif'; g.fillText(s.title, 110, ly)
-    g.fillStyle = 'rgba(184,200,197,.7)'; g.font = '500 24px "JetBrains Mono", monospace'; g.textAlign = 'right'; g.fillText(`${PLACES[s.place].elevFt.toLocaleString()} FT`, W - 60, ly); g.textAlign = 'left'
+    g.fillStyle = 'rgba(184,200,197,.7)'; g.font = '500 24px "JetBrains Mono", monospace'; g.textAlign = 'right'; g.fillText(`${placeOf(s).elevFt.toLocaleString()} FT`, W - 60, ly); g.textAlign = 'left'
     ly += photos.length ? 52 : 62
   })
   g.fillStyle = '#E8B86D'; g.font = '600 32px "Plus Jakarta Sans", sans-serif'; g.fillText('One Day. Four Friends. Endless Views.', 60, H - 90)

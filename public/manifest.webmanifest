@@ -2,7 +2,7 @@
   "name": "Smokies Escape ’26",
   "short_name": "Smokies ’26",
   "description": "One Day. Four Friends. Endless Views. — our Great Smoky Mountains & Gatlinburg trip companion.",
-  "start_url": "./",
+  "start_url": "./trip/smokies-2026/",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -14,7 +14,7 @@
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Co-Pilot", "url": "./#copilot", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Tickets", "url": "./#tickets" }
+    { "name": "Co-Pilot", "url": "./trip/smokies-2026/#copilot", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Tickets", "url": "./trip/smokies-2026/#tickets" }
   ]
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { PLACES, TRIP_DATE, TZ, WEATHER_POINTS } from '../data/trip'
+import { PLACES, TZ, WEATHER_POINTS } from '../data/trip'
+import { getTripDate } from './time'
 
 export interface Hour { time: string; temp: number; feels: number; pop: number | null; code: number; wind: number; gust: number; vis: number | null }
 export interface PointWx { id: string; name: string; elevFt: number; hours: Hour[]; sunrise?: string; sunset?: string; tmax?: number; tmin?: number }
@@ -25,10 +26,10 @@ async function fetchWx(): Promise<Wx> {
     temperature_unit: 'fahrenheit', wind_speed_unit: 'mph', timezone: TZ,
   })
   let fallback: string | undefined
-  let r = await fetch(`https://api.open-meteo.com/v1/forecast?${q}&start_date=${TRIP_DATE}&end_date=${TRIP_DATE}`)
-  let forDate = TRIP_DATE
+  let r = await fetch(`https://api.open-meteo.com/v1/forecast?${q}&start_date=${getTripDate()}&end_date=${getTripDate()}`)
+  let forDate = getTripDate()
   if (!r.ok) {
-    fallback = 'Nov 27 is outside the forecast window — showing today.'
+    fallback = 'The trip day is outside the forecast window — showing today.'
     r = await fetch(`https://api.open-meteo.com/v1/forecast?${q}&forecast_days=1`)
     forDate = new Date().toISOString().slice(0, 10)
   }
@@ -75,7 +76,7 @@ export function useWeather() {
       .finally(() => setBusy(false))
   }, [])
   useEffect(() => {
-    if (!wx || Date.now() - wx.fetchedAt > 20 * 60000) refresh()
+    if (!wx || wx.forDate !== getTripDate() || Date.now() - wx.fetchedAt > 20 * 60000) refresh()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return { wx, err, busy, refresh }
 }
@@ -87,7 +88,7 @@ export function hourAt(p: PointWx | undefined, hour: number): Hour | undefined {
 const ICY = new Set([48, 56, 57, 66, 67, 71, 73, 75, 77, 85, 86])
 /** Real-forecast check for snow / ice / freezing conditions at the high stops during the planned window. */
 export function summitRisk(wx: Wx | null): { where: string; hour: string; temp: number; label: string } | null {
-  if (!wx || wx.forDate !== TRIP_DATE) return null
+  if (!wx || wx.forDate !== getTripDate()) return null
   for (const id of ['kuwohi', 'ngap']) {
     const p = wx.points.find((x) => x.id === id)
     const h = p?.hours.find((x) => { const hr = +x.time.slice(11, 13); return hr >= 8 && hr <= 11 && (ICY.has(x.code) || (x.temp <= 32 && (x.pop ?? 0) >= 40)) })

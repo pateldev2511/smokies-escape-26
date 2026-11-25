@@ -1,5 +1,16 @@
 import { TRIP_DATE, TZ } from '../data/trip'
 
+let current = TRIP_DATE
+/** The main trip day (organizer-editable). */
+export const setTripDate = (d: string) => void (current = d || TRIP_DATE)
+export const getTripDate = () => current
+/** Shift a YYYY-MM-DD date by n days. */
+export function shiftDate(d: string, n: number) {
+  const [y, m, dd] = d.split('-').map(Number)
+  const t = new Date(Date.UTC(y, m - 1, dd + n))
+  return t.toISOString().slice(0, 10)
+}
+
 function zoneOffset(at: Date, tz: string): number {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -10,7 +21,7 @@ function zoneOffset(at: Date, tz: string): number {
 }
 
 /** Wall-clock time in America/New_York → Date. Accepts "25:30" for 1:30 AM next day. */
-export function at(hhmm: string, date = TRIP_DATE): Date {
+export function at(hhmm: string, date = current): Date {
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = hhmm.split(':').map(Number)
   const guess = Date.UTC(y, m - 1, d, hh, mm)

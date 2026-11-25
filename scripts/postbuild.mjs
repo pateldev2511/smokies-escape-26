@@ -6,7 +6,7 @@ const files = []
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => {
   const p = path.join(d, e.name)
   if (e.isDirectory()) walk(p)
-  else if (!/\.(map)$/.test(e.name) && !['sw.js', 'precache.json', '.nojekyll'].includes(e.name) && !/-1920\.webp$/.test(e.name) && !(/-1200\.webp$/.test(e.name) && !e.name.startsWith('hero')) && !/og\.jpg$/.test(e.name)) files.push(path.relative(dist, p).split(path.sep).join('/'))
+  else if (!/\.(map)$/.test(e.name) && !['sw.js', 'precache.json', '.nojekyll'].includes(e.name) && !p.includes('admin') && !/-1920\.webp$/.test(e.name) && !(/-1200\.webp$/.test(e.name) && !e.name.startsWith('hero')) && !/og\.jpg$/.test(e.name)) files.push(path.relative(dist, p).split(path.sep).join('/'))
 })
 walk(dist)
 fs.writeFileSync(path.join(dist, 'precache.json'), JSON.stringify(files))

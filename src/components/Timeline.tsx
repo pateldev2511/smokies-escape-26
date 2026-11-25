@@ -1,13 +1,14 @@
 import {
-  AlertTriangle, Car, Check, ChevronDown, Clock, CloudSun, DollarSign, Flag, Footprints, Gauge, Lock, MapPin, Mountain, Navigation, Pencil,
+  AlertTriangle, Car, Check, ChevronDown, Clock, CloudSun, DollarSign, Flag, Footprints, Gauge, Lock, MapPin, Mountain, Navigation,
   RotateCcw, Share2, SkipForward, Ticket, TimerReset, TreePine, Utensils, Zap, Landmark,
 } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
-import { BOOKINGS, PLACES, ROUTE_ALTERNATIVES, WEATHER_POINTS, SITE_URL, type Category } from '../data/trip'
-import { leaveBy, useLate, useStartEdit, useStatus, useTrip, type Projected } from '../lib/engine'
+import { PLACES, ROUTE_ALTERNATIVES, WEATHER_POINTS, SITE_URL, type Category } from '../data/trip'
+import { leaveBy, placeOf, useLate, useStatus, useTrip, type Projected } from '../lib/engine'
 import { useLocal } from '../lib/store'
 import { sunTimes } from '../lib/sun'
-import { addMin, at, dur, fmt } from '../lib/time'
+import { addMin, at, dur, fmt, getTripDate } from '../lib/time'
+import { DayTabs } from './Days'
 import { hourAt, useWeather, WMO, type Wx } from '../lib/weather'
 import { ExtLink, Note, Photo, Reveal, Section, useNow } from './ui'
 import { SummitAlert } from './SummitAlert'
@@ -25,8 +26,8 @@ const SUN = sunTimes(at('00:00'), PLACES.anak.lat, PLACES.anak.lng)
 export const fillTokens = (s: string) => s.replace('{SUNSET}', SUN.set ? fmt(SUN.set) : '≈ 5:2x PM').replace('{SUNRISE}', SUN.rise ? `~${fmt(SUN.rise)}` : '~7:25 AM')
 
 function forecastFor(s: Projected, wx: Wx | null) {
-  if (!wx || wx.forDate !== '2026-11-27') return null
-  const p = PLACES[s.place]
+  if (!wx || wx.forDate !== getTripDate()) return null
+  const p = placeOf(s)
   const near = WEATHER_POINTS.map((w) => ({ w, d: Math.hypot(PLACES[w.place].lat - p.lat, PLACES[w.place].lng - p.lng) })).sort((a, b) => a.d - b.d)[0]
   if (near.d > 0.2) return null
   const hr = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(s.pStart))
@@ -35,7 +36,7 @@ function forecastFor(s: Projected, wx: Wx | null) {
 
 async function shareStop(s: Projected) {
   const url = `${SITE_URL}#stop-${s.id}`
-  const text = `${s.title} — ${fmt(s.plannedStart)} on Fri Nov 27 · Smokies Escape ’26`
+  const text = `${s.title} — ${fmt(s.plannedStart)} on Sat Nov 28 · Smokies Escape ’26`
   if (navigator.share) return navigator.share({ title: s.title, text, url }).catch(() => {})
   await navigator.clipboard?.writeText(`${text}\n${url}`)
   alert('Link copied')
@@ -45,7 +46,7 @@ function Classification({ s }: { s: Projected }) {
   if (s.fixedAt)
     return (
       <span className="chip !border-emerald-400/50 !text-emerald-300 light:!text-emerald-700">
-        <Lock size={11} /> Fixed · booked {fmt(s.fixedAt)}
+        <Lock size={11} /> Fixed · confirmed {fmt(s.fixedAt)}
       </span>
     )
   if (s.bookingId) return <span className="chip !border-sunset/50 !text-[var(--gold)]">Target · needs booking</span>
@@ -55,15 +56,13 @@ function Classification({ s }: { s: Projected }) {
 
 function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?: Projected }) {
   const [, setStatus] = useStatus(s.id)
-  const [edit, setEdit] = useStartEdit(s.id)
   const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState(false)
   const { wx } = useWeather()
   const fx = forecastFor(s, wx)
   const Icon = CAT[s.category]
   const st = s.status.s
   const skipped = st === 'skipped'
-  const booking = s.bookingId ? BOOKINGS.find((b) => b.id === s.bookingId) : undefined
+  const booking = s.booking
   const start = trip ? s.pStart : s.plannedStart
   const end = trip ? s.pEnd : s.plannedEnd
   const totalMin = s.id === 'depart' ? s.driveIn || 255 : s.onsiteMin + s.travelIn
@@ -81,7 +80,8 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(13_30_25/.15)_0%,transparent_35%,rgb(13_30_25/.9)_100%)]" />
             <div className="absolute top-3 right-3 left-3 flex flex-wrap gap-1.5">
               <span className="chip !border-white/25 !bg-black/45 !text-cream backdrop-blur"><Icon size={12} /> {s.category}</span>
-              {booking && s.booking?.status !== 'Booked' && <span className="chip !border-red-300/60 !bg-red-500/85 !text-white">{booking.priority} · not booked</span>}
+              {booking && booking.status !== 'Confirmed' && booking.status !== 'Not required' && <span className="chip !border-red-300/60 !bg-red-500/85 !text-white">{booking.priority} · {booking.status}</span>}
+              {booking?.status === 'Confirmed' && <span className="chip !border-emerald-300/60 !bg-emerald-500/85 !text-white">✓ Confirmed{booking.time ? ` ${fmt(at(booking.time))}` : ''}</span>}
               {fx && (
                 <span className="chip !border-white/25 !bg-black/45 !text-cream backdrop-blur">
                   {WMO[fx.code]?.[1]} {Math.round(fx.temp)}°F{fx.pop != null ? ` · ${fx.pop}%` : ''}
@@ -89,7 +89,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
               )}
             </div>
             <div className="absolute right-4 bottom-3 left-4 text-cream">
-              <p className="mono text-[0.68rem] tracking-wider text-sunset">{s.kicker.toUpperCase()} · {PLACES[s.place].elevFt.toLocaleString()} FT</p>
+              <p className="mono text-[0.68rem] tracking-wider text-sunset">{s.kicker.toUpperCase()} · {placeOf(s).elevFt.toLocaleString()} FT</p>
               <h3 className="display mt-1 text-[1.65rem] leading-[1.05] sm:text-4xl">{s.title}</h3>
             </div>
           </div>
@@ -116,7 +116,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
               <div className="mt-3">
                 <Note tone="bad">
                   <AlertTriangle size={14} className="mr-1.5 inline" />
-                  Projected to arrive {dur(s.conflict)} after your booked {fmt(s.fixedAt!)} time. Skip or shorten an earlier stop, or call ahead. Your reservation time is never changed automatically.
+                  Projected to arrive {dur(s.conflict)} after your booked {fmt(s.fixedAt!)} time. Skip or shorten an earlier stop, or call ahead. The confirmed reservation time is never changed automatically.
                 </Note>
               </div>
             )}
@@ -184,21 +184,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
                   <ul className="space-y-1.5">{s.tips.map((x) => <li key={x} className="ink2 flex gap-2"><span className="gold">›</span>{fillTokens(x)}</li>)}</ul>
                 </div>
                 {s.links && <div className="flex flex-wrap gap-2">{s.links.map((l) => <ExtLink key={l.url} href={l.url}>{l.label}</ExtLink>)}</div>}
-                {!s.fixedAt && s.id !== 'home' && (
-                  <div className="no-print">
-                    {editing ? (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label htmlFor={`e-${s.id}`} className="label">Planned start (ET)</label>
-                        <input id={`e-${s.id}`} type="time" className="input !w-36" defaultValue={edit ?? s.start} onChange={(e) => e.target.value && setEdit(e.target.value)} />
-                        <button className="btn btn-ghost btn-sm" onClick={() => (setEdit(null), setEditing(false))}>Reset</button>
-                        <button className="btn btn-gold btn-sm" onClick={() => setEditing(false)}>Done</button>
-                      </div>
-                    ) : (
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}><Pencil size={14} /> Adjust planned time</button>
-                    )}
-                  </div>
-                )}
-                <p className="ink2 mono text-[0.66rem]">PIN: {PLACES[s.place].source} · ELEV: Open-Meteo DEM</p>
+                <p className="ink2 mono text-[0.66rem]">PIN: {placeOf(s).source} · ELEV: Open-Meteo DEM</p>
               </div>
             )}
           </div>
@@ -272,17 +258,20 @@ export function TripPanel({ compact = false }: { compact?: boolean }) {
 export function InteractiveTimeline() {
   const { stops, plan } = useTrip()
   const [mode, setMode] = useLocal<'plan' | 'trip'>('mode', 'plan')
+  const [day, setDay] = useLocal<'fri' | 'sat' | 'sun'>('day', 'sat')
   const pct = useMemo(() => {
     const a = stops.filter((s) => s.status.s !== 'skipped')
     return Math.round((a.filter((s) => s.status.s === 'done').length / a.length) * 100)
   }, [stops])
   const trip = mode === 'trip'
   return (
-    <Section id="timeline" index="03" kicker={`Itinerary · ${plan.name}`} title={<>Ten stops. <span className="text-[var(--gold)]">One long, glorious day.</span></>} intro="Times are Eastern targets with traffic and queue flexibility. Planning Mode shows the plan; Trip Mode re-projects the rest of the day from your check-ins, skips and booked times.">
+    <Section id="timeline" index="03" kicker={`Itinerary · ${plan.name}`} title={<>Three days. <span className="text-[var(--gold)]">One glorious adventure.</span></>} intro="Friday: rental pickup. Saturday: the mountains. Sunday: home and the rental return. All times Eastern; Saturday times are targets with traffic and queue flexibility.">
+      <DayTabs day={day} setDay={setDay} />
+      {day !== 'sat' ? null : (<>
       <div className="no-print mb-6 inline-flex rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-1" role="tablist">
         {(['plan', 'trip'] as const).map((m) => (
           <button key={m} role="tab" aria-selected={mode === m} onClick={() => setMode(m)} className={`btn btn-sm ${mode === m ? 'btn-gold' : '!bg-transparent'}`}>
-            {m === 'plan' ? 'Planning Mode' : 'Trip Mode'}
+            {m === 'plan' ? 'Planning Mode' : 'Trip Mode (this phone)'}
           </button>
         ))}
       </div>
@@ -296,6 +285,7 @@ export function InteractiveTimeline() {
           <DestinationCard key={s.id} s={s} trip={trip} next={stops.slice(i + 1).find((x) => x.status.s !== 'skipped')} />
         ))}
       </div>
+      </>)}
     </Section>
   )
 }

@@ -5,8 +5,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const TZ = 'America/New_York'
-export const TRIP_DATE = '2026-11-27'
-export const SITE_URL = 'https://pateldev2511.github.io/smokies-escape-26/'
+export const TRIP_DATE = '2026-11-28' // Saturday — main adventure day
+export const BASE_URL = 'https://pateldev2511.github.io/smokies-escape-26/'
+export const SITE_URL = `${BASE_URL}trip/smokies-2026/` // traveler (read-only) link
+export const ADMIN_URL = `${BASE_URL}admin/` // organizer dashboard (login required)
+export const TRIP_ID = 'smokies-2026'
 
 export type Category = 'Driving' | 'Scenic' | 'Hiking' | 'Food' | 'Adventure' | 'Attraction'
 export type ImageKey = 'hero' | 'ocon' | 'ngap' | 'road' | 'kuwohi' | 'kview' | 'kfog' | 'cataract' | 'anak' | 'night' | 'river'
@@ -64,6 +67,8 @@ export interface Stop {
   id: string
   n: number
   place: PlaceId
+  /** For organizer-added stops: geocoded position (source recorded). */
+  geo?: { lat: number; lng: number; elevFt?: number; source: string }
   title: string
   kicker: string
   category: Category
@@ -159,7 +164,7 @@ export const STOPS: Stop[] = [
     description: 'Explore the lively mountain town — lunch at a local spot, The Village Shops, a stroll along the Parkway, souvenir and sweet shops. Park once for downtown and Anakeesta where practical.',
     activities: ['Nonveg lunch (~60 min)', 'The Village Shops', 'Parkway walk', 'Fudge, taffy & souvenirs'],
     cost: '$15–$25 pp lunch + $12–$25 parking', costLow: 72, costHigh: 125, difficulty: 'Easy', weather: 'Low',
-    tips: ['Preferred parking: Gatlinburg Aquarium Parking Garage. Alternative: 526 Parkway.', 'Holiday Friday — expect congestion; keep the buffer.'],
+    tips: ['Preferred parking: Gatlinburg Aquarium Parking Garage. Alternative: 526 Parkway.', 'Thanksgiving-weekend Saturday — expect congestion; keep the buffer.'],
     mapsUrl: search('The Village Shops 634 Parkway Gatlinburg TN'),
     navUrl: dir('Gatlinburg Aquarium Parking Garage, Gatlinburg, TN', 'Sugarlands Visitor Center, Gatlinburg, TN'),
     links: [
@@ -223,15 +228,14 @@ export const STOPS: Stop[] = [
 ]
 
 // ── Bookings ────────────────────────────────────────────────────────────────
-export type BookingStatus = 'Not Booked' | 'Booking Started' | 'Booked' | 'Cancelled' | 'Not Required'
-export const BOOKING_STATUSES: BookingStatus[] = ['Not Booked', 'Booking Started', 'Booked', 'Cancelled', 'Not Required']
+export type BookingStatus = 'Not booked' | 'Booking in progress' | 'Confirmed' | 'Cancelled' | 'Not required'
+export const BOOKING_STATUSES: BookingStatus[] = ['Not booked', 'Booking in progress', 'Confirmed', 'Cancelled', 'Not required']
 export interface Booking {
   id: string
   title: string
   what: string
   priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'REQUIRED'
   preferred: string
-  defaultTime?: string
   guests: number
   cost: string
   url: string
@@ -239,29 +243,81 @@ export interface Booking {
   info?: { label: string; url: string }
   stopId?: string
   notes: string[]
+  // live fields (edited by the organizer, published to travelers)
+  status: BookingStatus
+  date: string
+  time?: string
+  price?: string
+  publicNote?: string
+  cancelBy?: string
 }
 export const BOOKINGS: Booking[] = [
   {
-    id: 'anakeesta', title: 'Anakeesta', what: '4 adult timed-entry tickets · Fri Nov 27', priority: 'CRITICAL', preferred: 'Entry 2:30–3:00 PM', guests: 4,
+    id: 'anakeesta', title: 'Anakeesta', what: '4 adult timed-entry tickets · Sat Nov 28', priority: 'CRITICAL', preferred: 'Entry 2:30–3:00 PM', guests: 4,
     cost: '$39–$45 / adult · ≈ $156–$180', url: 'https://tickets.anakeesta.com/webstore/shop/viewitems.aspx?c=web4&cg=web', cta: 'BOOK 4 ANAKEESTA TICKETS',
     info: { label: 'Hours', url: 'https://anakeesta.com/hours-location-and-directions/' }, stopId: 'anakeesta',
-    notes: ['Verify the exact Nov 27 price at checkout.', 'Extras inside the park cost more.'],
+    notes: ['Journey to the North Pole is listed on Anakeesta’s calendar for Nov 28.', 'Verify the exact price at checkout — extras inside cost more.'],
+    status: 'Not booked', date: '2026-11-28',
   },
   {
-    id: 'grill', title: 'The Park Grill', what: 'Dinner for 4 adults', priority: 'HIGH', preferred: 'Table ≈ 7:30 PM', guests: 4,
+    id: 'grill', title: 'The Park Grill', what: 'Dinner for 4 adults · Sat Nov 28', priority: 'HIGH', preferred: 'Table ≈ 7:30 PM', guests: 4,
     cost: '$25–$40 pp before tax & tip', url: 'https://parkgrillgatlinburg.com/get-a-table/', cta: 'Reserve a table', info: { label: 'Website', url: 'https://parkgrillgatlinburg.com/' }, stopId: 'grill',
-    notes: ['7:30 PM is a target until confirmed.'],
+    notes: ['7:30 PM is a target until confirmed.'], status: 'Not booked', date: '2026-11-28',
   },
   {
     id: 'coaster', title: 'Moonshine Mountain Coaster', what: '4 adult single rides · evening', priority: 'MEDIUM', preferred: 'After ~6:15 PM', guests: 4,
     cost: '≈ $18 / adult · ≈ $72', url: 'https://www.moonshinemountaincoaster.com/buy-tickets/', cta: 'Buy coaster tickets', info: { label: 'Hours', url: 'https://www.moonshinemountaincoaster.com/hours/' }, stopId: 'coaster',
-    notes: ['Weather-dependent operation.', 'Advance tickets don’t guarantee skipping the line.'],
+    notes: ['Published Saturday hours 10 AM–11 PM, weather permitting.', 'Advance tickets don’t guarantee skipping the line.'], status: 'Not booked', date: '2026-11-28',
   },
   {
-    id: 'parking', title: 'Smokies Parking Tag', what: '1 car · daily tag for Nov 27', priority: 'REQUIRED', preferred: 'Valid all day', guests: 1,
+    id: 'parking', title: 'Smokies Parking Tag', what: '1 car · daily tag for Sat Nov 28', priority: 'REQUIRED', preferred: 'Valid all day', guests: 1,
     cost: '$5 daily tag', url: 'https://www.recreation.gov/activitypass/AP2510', cta: 'Buy parking tag', info: { label: 'NPS fees', url: 'https://www.nps.gov/grsm/planyourvisit/fees.htm' },
-    notes: ['Required to park in the park for more than 15 minutes.'],
+    notes: ['Required to park in the park for more than 15 minutes.'], status: 'Not booked', date: '2026-11-28',
   },
+]
+
+// ── Rental car ──────────────────────────────────────────────────────────────
+export type RentalStatus = 'Not picked up' | 'Picked up' | 'In use' | 'Return pending' | 'Returned'
+export const RENTAL_STATUSES: RentalStatus[] = ['Not picked up', 'Picked up', 'In use', 'Return pending', 'Returned']
+export interface Geo { lat: number; lng: number; source: string; label?: string }
+export interface Rental {
+  status: RentalStatus
+  bookingStatus: BookingStatus
+  company: string
+  pickupAddress: string
+  returnAddress: string
+  pickupGeo?: Geo
+  returnGeo?: Geo
+  /** OSRM drive minutes from Gainesville to the return address (computed in the dashboard). */
+  returnDriveMin?: number
+  returnBufferMin: number
+  pickupAt: string // local ET ISO-ish "YYYY-MM-DDTHH:MM"
+  returnBy: string
+  vehicle: string
+  mileageOut: string
+  mileageIn: string
+  fuelOut: string
+  cost: string
+  drivers: string
+}
+export const RENTAL_DEFAULT: Rental = {
+  status: 'Not picked up', bookingStatus: 'Not booked', company: '', pickupAddress: '', returnAddress: '', returnBufferMin: 20,
+  pickupAt: '2026-11-27T18:00', returnBy: '2026-11-29T10:00', vehicle: '', mileageOut: '', mileageIn: '', fuelOut: '', cost: '', drivers: '',
+}
+
+// ── Friday & Sunday ─────────────────────────────────────────────────────────
+export interface DayItem { id: string; time: string; title: string; details: string[]; kind?: 'rental-pickup' | 'final-check' | 'rental-return' | 'home' }
+export const FRIDAY: DayItem[] = [
+  { id: 'f1', time: '18:00', title: 'Pick up rental car', kind: 'rental-pickup', details: ['Collect the vehicle; check driver’s licenses and the rental agreement.', 'Photograph every side before leaving — note existing damage.', 'Confirm fuel policy, mileage limits and additional-driver authorization.', 'Check the return instructions and location.'] },
+  { id: 'f2', time: '18:30', title: 'Vehicle preparation', details: ['Fuel if needed.', 'Load luggage, snacks and water.', 'Download offline maps.', 'Check weather and NPS road closures.'] },
+  { id: 'f3', time: '19:30', title: 'Final trip check', kind: 'final-check', details: ['Confirm Anakeesta, coaster, Park Grill and the park parking tag.', 'Check mountain road availability.', 'Agree driver responsibilities.'] },
+  { id: 'f4', time: '20:00', title: 'Sleep', details: ['Lights out early — alarms for the 3:30 AM departure.'] },
+]
+export const SUNDAY: DayItem[] = [
+  { id: 's1', time: '01:00', title: 'Target arrival home', kind: 'home', details: ['1:00–2:00 AM target — never forced if a driver is sleepy.'] },
+  { id: 's2', time: '01:30', title: 'Unload & rest', details: ['Bring everything inside; phones on chargers.'] },
+  { id: 's3', time: '08:30', title: 'Vehicle check', details: ['Refuel if the policy requires it.', 'Note mileage and fuel level.', 'Final walk-around photos; gather belongings.'] },
+  { id: 's4', time: '10:00', title: 'Return the rental car', kind: 'rental-return', details: ['Return to the agreed location by 10:00 AM.'] },
 ]
 
 // ── Plans ───────────────────────────────────────────────────────────────────
@@ -274,7 +330,7 @@ export const PLANS: Plan[] = [
     notes: ['Kuwohi skipped — enjoy other permitted scenic pullouts on US-441.', 'Extra time goes to Cataract Falls (+20 min) and downtown Gatlinburg (+40 min).'], keeps: ['Anakeesta, coaster and Park Grill reservations unchanged.'],
   },
   {
-    id: 'C', name: 'Plan C — Newfound Gap Road Closed', short: 'No mountain crossing. Verified open highway to Gatlinburg; prioritize downtown, Anakeesta & coaster', skip: ['ocon', 'ngap', 'kuwohi', 'cataract'], morningVia: 'around', extend: { downtown: 60 },
+    id: 'C', name: 'Plan C — US-441 Closed', short: 'No mountain crossing. Verified open highway to Gatlinburg; prioritize downtown, Anakeesta & coaster', skip: ['ocon', 'ngap', 'kuwohi', 'cataract'], morningVia: 'around', extend: { downtown: 60 },
     notes: ['Oconaluftee, Newfound Gap, Kuwohi and Cataract Falls skipped.', 'Let Google Maps route around the closure (OSRM: ≈ 5 h 42 min via Asheville/I-40) — verify it is open.', 'Optional: Gatlinburg SkyPark if time and budget allow.'],
     keeps: ['Anakeesta, coaster and Park Grill reservations unchanged.', 'Parking tag not needed if you don’t park inside the park.'],
   },
@@ -282,10 +338,12 @@ export const PLANS: Plan[] = [
 export const SKYPARK = { tickets: 'https://www.gatlinburgskypark.com/tickets', maps: search('Gatlinburg SkyPark 765 Parkway Gatlinburg TN') }
 
 // ── Budget ──────────────────────────────────────────────────────────────────
-export const EXPENSE_CATS = ['Activities', 'Food', 'Fuel', 'Parking', 'Other'] as const
+export const EXPENSE_CATS = ['Rental', 'Activities', 'Food', 'Fuel', 'Parking', 'Other'] as const
 export type ExpenseCat = (typeof EXPENSE_CATS)[number]
-export interface BudgetLine { id: string; label: string; cat: ExpenseCat; low: number; high: number }
+export interface BudgetLine { id: string; label: string; cat: ExpenseCat; low: number; high: number; deposit?: boolean }
 export const BUDGET: BudgetLine[] = [
+  { id: 'rental', label: 'Rental car (enter actual price)', cat: 'Rental', low: 0, high: 0 },
+  { id: 'deposit', label: 'Rental deposit (refundable — not counted)', cat: 'Rental', low: 0, high: 0, deposit: true },
   { id: 'tag', label: 'Park daily parking tag', cat: 'Parking', low: 5, high: 5 },
   { id: 'anak', label: 'Anakeesta admission (4)', cat: 'Activities', low: 156, high: 180 },
   { id: 'coaster', label: 'Moonshine coaster (4)', cat: 'Activities', low: 72, high: 72 },
@@ -295,14 +353,17 @@ export const BUDGET: BudgetLine[] = [
   { id: 'dinner', label: 'Dinner', cat: 'Food', low: 100, high: 160 },
   { id: 'fuel', label: 'Fuel', cat: 'Fuel', low: 45, high: 75 },
 ]
+export interface Expense { id: string; label: string; amount: number; cat: ExpenseCat; paidBy: string; at: number }
 
 // ── Checklist ───────────────────────────────────────────────────────────────
 export const CHECKLIST: Record<string, string[]> = {
-  Car: ['Fuel', 'Tire pressure', 'Insurance', 'Driver’s licenses', 'Phone charger', 'Offline maps', 'Emergency supplies'],
+  'Rental (Fri)': ['Licenses for both drivers', 'Damage photos taken', 'Fuel policy confirmed', 'Mileage noted', 'Second driver authorized'],
+  Car: ['Fuel', 'Tire pressure', 'Insurance', 'Phone charger', 'Offline maps', 'Emergency supplies'],
   Clothing: ['Warm jacket', 'Layers', 'Hiking shoes', 'Gloves', 'Rain protection'],
   Personal: ['Water', 'Snacks', 'Phone', 'Power bank', 'Wallet', 'Camera', 'Sunglasses'],
   Bookings: ['Anakeesta tickets', 'Coaster tickets', 'Park parking tag printed', 'Dinner reservation', 'Booking screenshots'],
   'Before Leaving': ['Weather checked', 'Roads checked', 'Drivers rested', 'Departure time confirmed', 'Route downloaded'],
+  'Return (Sun)': ['Refuel if required', 'Final mileage noted', 'Return photos taken', 'Belongings collected'],
 }
 
 export const TRAVELERS_DEFAULT = [
@@ -320,33 +381,33 @@ export const WEATHER_POINTS: { id: string; name: string; place: PlaceId; hour: n
 ]
 
 export const SAFETY = [
-  { text: 'Kuwohi Road may close due to ice or snow.', url: 'https://www.nps.gov/grsm/planyourvisit/seasonalroads.htm' },
-  { text: 'Newfound Gap Road can close temporarily.', url: 'https://www.nps.gov/grsm/planyourvisit/temproadclose.htm' },
-  { text: 'Mountain visibility can be poor — fog can hide every view.' },
-  { text: 'Conditions above 6,000 ft can differ dramatically from downtown Gatlinburg.' },
+  { text: 'Kuwohi Road can close for ice or snow.', url: 'https://www.nps.gov/grsm/planyourvisit/seasonalroads.htm' },
+  { text: 'Newfound Gap Road can close.', url: 'https://www.nps.gov/grsm/planyourvisit/temproadclose.htm' },
+  { text: 'Elevated areas can be below freezing.' },
+  { text: 'National park travel times vary — fog and traffic slow everything.' },
+  { text: 'Holiday-weekend crowds can affect parking and queues.' },
   { text: 'Laurel Falls Trail is closed for rehabilitation.' },
 ]
 export const ROAD_STATUS_URL = 'https://www.nps.gov/grsm/planyourvisit/temproadclose.htm'
 
-export const SHARE_MESSAGE = `🏔️ SMOKIES ESCAPE 2026!
+export const SHARE_MESSAGE = `🏔️ SMOKIES ESCAPE ’26
 
-Friday, November 27
+Our adventure is officially planned!
 
-4 friends, 1 car, and a full day of adventure!
+🚗 Friday, Nov 27 — Rental pickup at 6 PM
+🌄 Saturday, Nov 28 — Smoky Mountains + Gatlinburg
+🏠 Sunday, Nov 29 — Home and rental return by 10 AM
 
-🌄 Great Smoky Mountains
-🥾 Kuwohi and Cataract Falls
-🌲 Anakeesta
-🎢 Moonshine Mountain Coaster
-🌃 Gatlinburg at Night
+4 friends, 1 car and a full day of adventure!
 
-Check out our interactive trip plan, Google Maps route, tickets and full schedule!
+Check our live trip itinerary, maps, booking statuses and plans:
 
 ${SITE_URL}`
 
 export const FULL_ROUTE = {
   all: dir('Gainesville, GA', 'Gainesville, GA', ['Oconaluftee Visitor Center, Cherokee, NC', 'Newfound Gap, TN', 'Kuwohi Observation Tower', 'Sugarlands Visitor Center, Gatlinburg, TN', 'Anakeesta, Gatlinburg, TN', 'The Park Grill, Gatlinburg, TN']),
-  morning: dir('Kuwohi Observation Tower', 'Gainesville, GA', ['Oconaluftee Visitor Center, Cherokee, NC', 'Newfound Gap, TN']),
-  afternoon: dir('The Park Grill, 1110 Parkway, Gatlinburg, TN', 'Kuwohi Observation Tower', ['Sugarlands Visitor Center, Gatlinburg, TN', 'Anakeesta, 576 Parkway, Gatlinburg, TN', 'Moonshine Mountain Coaster, 306 Parkway, Gatlinburg, TN']),
+  morning: dir('Oconaluftee Visitor Center, Cherokee, NC', 'Gainesville, GA'),
+  scenic: dir('Sugarlands Visitor Center, Gatlinburg, TN', 'Oconaluftee Visitor Center, Cherokee, NC', ['Newfound Gap, TN', 'Kuwohi Observation Tower']),
+  afternoon: dir('The Park Grill, 1110 Parkway, Gatlinburg, TN', 'Sugarlands Visitor Center, Gatlinburg, TN', ['Anakeesta, 576 Parkway, Gatlinburg, TN', 'Moonshine Mountain Coaster, 306 Parkway, Gatlinburg, TN']),
   home: 'https://www.google.com/maps/dir/?api=1&origin=Gatlinburg%2C+TN&destination=Gainesville%2C+GA&travelmode=driving',
 }
