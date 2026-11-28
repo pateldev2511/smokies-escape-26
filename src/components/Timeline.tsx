@@ -3,7 +3,7 @@ import {
   RotateCcw, Share2, SkipForward, Ticket, TimerReset, TreePine, Utensils, Zap, Landmark,
 } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
-import { PLACES, ROUTE_ALTERNATIVES, WEATHER_POINTS, SITE_URL, type Category } from '../data/trip'
+import { PLACES, WEATHER_POINTS, SITE_URL, type Category } from '../data/trip'
 import { leaveBy, placeOf, useLate, useStatus, useTrip, type Projected } from '../lib/engine'
 import { useLocal } from '../lib/store'
 import { sunTimes } from '../lib/sun'
@@ -65,8 +65,9 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
   const st = s.status.s
   const skipped = st === 'skipped'
   const booking = s.booking
-  const start = trip ? s.pStart : s.plannedStart
-  const end = trip ? s.pEnd : s.plannedEnd
+  // Confirmed bookings always show their real time, even in Planning Mode
+  const start = trip || s.fixedAt ? s.pStart : s.plannedStart
+  const end = trip || s.fixedAt ? s.pEnd : s.plannedEnd
   const totalMin = s.id === 'depart' ? s.driveIn || 255 : s.onsiteMin + s.travelIn
 
   return (
@@ -103,7 +104,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
                   {s.id === 'home' ? `Leave ${fmt(trip ? addMin(s.pStart, -s.driveIn) : s.plannedStart)}` : `${fmt(start)}${s.id === 'depart' ? '' : ` – ${fmt(end)}`}`}
                 </div>
                 <div className="ink2 mt-0.5 text-xs">
-                  {s.id === 'home' ? `Arrive ≈ ${fmt(trip ? s.pStart : addMin(s.plannedStart, ROUTE_ALTERNATIVES.overPark.min), true)} before stops · target ≈ 1:30–3:00 AM Sun` : `${dur(totalMin)}${s.travelIn ? ` incl. ≈ ${s.travelIn}-min ${s.place === 'coaster' ? 'walk' : 'drive'}` : ''}`}
+                  {s.id === 'home' ? `Arrive ≈ ${fmt(s.pStart, true)} before stops (projected for the active plan) · not a live ETA` : `${dur(totalMin)}${s.travelIn ? ` incl. ≈ ${s.travelIn}-min ${s.place === 'coaster' ? 'walk' : 'drive'}` : ''}`}
                   {trip && s.delta !== 0 && !skipped && <span className={s.delta > 0 ? ' text-[var(--gold)]' : ' text-emerald-400'}> · {s.delta > 0 ? '+' : ''}{dur(s.delta)} vs plan</span>}
                   {s.edited && ' · edited'}
                 </div>
