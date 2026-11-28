@@ -1,0 +1,1 @@
+import{K as e,h as t,q as n,t as r}from"./App-BHvzyp5G.js";var i=n(),a=e(),o=t();(0,a.createRoot)(document.getElementById(`root`)).render((0,o.jsx)(i.StrictMode,{children:(0,o.jsx)(r,{})})),`serviceWorker`in navigator&&addEventListener(`load`,()=>navigator.serviceWorker.register(`/smokies-escape-26/sw.js`).catch(()=>{}));
