@@ -22,7 +22,7 @@ export function MapSection({ theme }: { theme: 'dark' | 'light' }) {
   }, [])
   const active = stops.filter((s) => s.status.s !== 'skipped')
   return (
-    <Section id="map" index="04" kicker="Route" title={<>Every pin, <span className="text-[var(--gold)]">one tap</span> from navigation.</>} intro="Pins use verified coordinates (Wikidata, US Census geocoder, OpenStreetMap). No road line is drawn — Google Maps does live routing.">
+    <Section id="map" index="04" kicker="Route" title={<>Every pin, <span className="text-[var(--gold)]">one tap</span> from navigation.</>} intro={corridor ? "Gold dashed line = today’s detour as routed by OSRM (OpenStreetMap), not live traffic. Grey pins = skipped stops. Google Maps does live routing." : "Pins use verified coordinates (Wikidata, US Census geocoder, OpenStreetMap). No road line is drawn — Google Maps does live routing."}>
       <div className="no-print mb-3 inline-flex rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-1" role="tablist" aria-label="Map area">
         {([['park', 'Smokies'], ['town', 'Gatlinburg'], ['all', 'Whole trip']] as const).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`btn btn-sm ${view === k ? 'btn-gold' : '!bg-transparent'}`}>{l}</button>
