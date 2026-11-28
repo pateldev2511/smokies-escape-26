@@ -101,7 +101,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <div className="mono text-lg font-semibold sm:text-xl">
-                  {s.id === 'home' ? `Leave ${fmt(trip ? addMin(s.pStart, -s.driveIn) : s.plannedStart)}` : `${fmt(start)}${s.id === 'depart' ? '' : ` – ${fmt(end)}`}`}
+                  {s.id === 'home' ? `Leave ≈ ${fmt(addMin(s.pStart, -s.driveIn))}` : `${fmt(start)}${s.id === 'depart' ? '' : ` – ${fmt(end)}`}`}
                 </div>
                 <div className="ink2 mt-0.5 text-xs">
                   {s.id === 'home' ? `Arrive ≈ ${fmt(s.pStart, true)} before stops (projected for the active plan) · not a live ETA` : `${dur(totalMin)}${s.travelIn ? ` incl. ≈ ${s.travelIn}-min ${s.place === 'coaster' ? 'walk' : 'drive'}` : ''}`}
