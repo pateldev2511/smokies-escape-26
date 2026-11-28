@@ -10,7 +10,7 @@ export function AnnouncementBanner() {
   return (
     <div role={a.level === 'urgent' ? 'alert' : 'status'} className={`mb-5 w-full max-w-2xl rounded-2xl border px-4 py-3 text-left shadow-[var(--shadow)] ${tone}`}>
       <p className="flex items-start gap-2 font-semibold"><I size={18} className="mt-0.5 shrink-0" />{a.title || 'Update from the organizer'}</p>
-      {a.text && <p className="mt-1 pl-6 text-sm leading-relaxed opacity-90">{a.text}</p>}
+      {a.text && <p className="mt-1 pl-6 text-sm leading-relaxed whitespace-pre-line opacity-90">{a.text}</p>}
     </div>
   )
 }

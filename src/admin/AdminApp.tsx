@@ -349,6 +349,7 @@ function ItineraryEditor({ doc, setDoc }: { doc: TripDoc; setDoc: (f: (d: TripDo
       <Card title="Trip basics" icon={<CalendarDays size={18} className="gold" />}>
         <div className="grid gap-3 sm:grid-cols-2">
           <F label="Main adventure date (Saturday)"><In type="date" value={doc.tripDate} onChange={(e) => e.target.value && setDate(e.target.value)} /></F>
+          <F label="Dinner plan"><select className="input" value={doc.dinnerPlan ?? 'TBD'} onChange={(e) => setDoc((d) => ({ ...d, dinnerPlan: e.target.value as TripDoc['dinnerPlan'] }))}><option value="TBD">To be finalized (both options shown)</option><option value="A">Option A — early dinner in Gatlinburg</option><option value="B">Option B — Spice Express after the coaster</option></select></F>
           <F label="Active plan (travelers follow this)"><select className="input" value={doc.plan} onChange={(e) => setDoc((d) => ({ ...d, plan: e.target.value as TripDoc['plan'] }))}>{PLANS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></F>
         </div>
         <p className="ink2 mt-2 text-xs">Changing the date moves the Friday pickup and Sunday return with it.</p>
@@ -386,6 +387,15 @@ function ItineraryEditor({ doc, setDoc }: { doc: TripDoc; setDoc: (f: (d: TripDo
                   <F label="Activities (one per line)"><Ta value={lines(s.activities)} onChange={(e) => upd(s.id, { activities: unlines(e.target.value) })} /></F>
                   <F label="Tips (one per line)"><Ta value={lines(s.tips)} onChange={(e) => upd(s.id, { tips: unlines(e.target.value) })} /></F>
                   <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={!!s.anchor} onChange={(e) => upd(s.id, { anchor: e.target.checked })} /> Anchored (never starts earlier than planned)</label>
+                  <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={!!s.optional} onChange={(e) => upd(s.id, { optional: e.target.checked })} /> Optional</label>
+                  <div className="grid gap-2 rounded-xl border border-[var(--line)] p-3 sm:col-span-2 sm:grid-cols-3">
+                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={!!s.skipped} onChange={(e) => upd(s.id, { skipped: e.target.checked })} /> Skipped (keep in history)</label>
+                    <F label="Skip reason"><In value={s.skipReason ?? ''} onChange={(e) => upd(s.id, { skipReason: e.target.value || undefined })} /></F>
+                    <div />
+                    <F label="Actual progress (published)"><select className="input" value={s.actual?.s ?? ''} onChange={(e) => upd(s.id, { actual: e.target.value ? { s: e.target.value as 'arrived' | 'done' | 'skipped', at: s.actual?.at } : undefined })}><option value="">Not set (travelers' own check-ins)</option><option value="arrived">Arrived</option><option value="done">Completed</option><option value="skipped">Skipped</option></select></F>
+                    <F label="Actual time (ET)"><In type="time" value={s.actual?.at ?? ''} onChange={(e) => s.actual && upd(s.id, { actual: { ...s.actual, at: e.target.value || undefined } })} /></F>
+                    <F label="Drive in from previous (min, optional)"><In inputMode="numeric" value={s.driveIn ?? ''} onChange={(e) => upd(s.id, { driveIn: e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value) || 0) })} /></F>
+                  </div>
                   <div className="flex justify-end sm:col-span-2">
                     <button className="btn btn-ghost btn-sm !text-red-400" disabled={i === 0} onClick={() => confirm(`Remove “${s.title}”?`) && setDoc((d) => ({ ...d, stops: d.stops.filter((x) => x.id !== s.id) }))}><Trash2 size={14} /> Remove stop</button>
                   </div>
@@ -446,6 +456,8 @@ function BookingsEditor({ doc, setDoc, priv, setPriv }: { doc: TripDoc; setDoc: 
       {doc.bookings.map((b) => (
         <Card key={b.id} title={b.title} icon={<Ticket size={18} className="gold" />} right={b.status !== 'Confirmed' && <button className="btn btn-gold btn-sm" onClick={() => upd(b.id, { status: 'Confirmed' })}><CheckCircle2 size={14} /> Mark Confirmed</button>}>
           <div className="grid gap-3 sm:grid-cols-3">
+            <F label="Title"><In value={b.title} onChange={(e) => upd(b.id, { title: e.target.value })} /></F>
+            <F label="Ticket / package details" wide><In value={b.what} onChange={(e) => upd(b.id, { what: e.target.value })} /></F>
             <F label="Status"><Sel value={b.status} options={BOOKING_STATUSES} onChange={(v) => upd(b.id, { status: v })} /></F>
             <F label="Date"><In type="date" value={b.date} onChange={(e) => upd(b.id, { date: e.target.value })} /></F>
             <F label="Time (ET)"><In type="time" value={b.time ?? ''} onChange={(e) => upd(b.id, { time: e.target.value || undefined })} /></F>

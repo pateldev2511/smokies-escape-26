@@ -58,6 +58,8 @@ export const DRIVE: Record<PlaceId, Partial<Record<PlaceId, number>>> = {
 export const ROUTE_ALTERNATIVES = {
   overPark: { min: 232, mi: 150.1, label: 'From Pigeon Forge over Newfound Gap (US-441 through the park)' },
   aroundPark: { min: 324, mi: 244.8, label: 'From Pigeon Forge around the park via I-40 & Asheville' },
+  aroundParkFromGatlinburg: { min: 342, mi: 251.2, label: 'From Gatlinburg around the park via Pigeon Forge, I-40 & Asheville' },
+  viaKnoxville: { min: 362, mi: 276.6, label: 'From Gatlinburg via Knoxville, I-75 & Chattanooga' },
 }
 
 const enc = encodeURIComponent
@@ -71,6 +73,13 @@ export interface Stop {
   place: PlaceId
   /** For organizer-added stops: geocoded position (source recorded). */
   geo?: { lat: number; lng: number; elevFt?: number; source: string }
+  /** Organizer-set: kept in trip history but removed from the active plan. */
+  skipped?: boolean
+  skipReason?: string
+  /** Organizer-set actual progress (published to everyone). */
+  actual?: { s: 'arrived' | 'done' | 'skipped'; at?: string }
+  /** Explicit drive minutes from the previous active stop (overrides the matrix). */
+  driveIn?: number
   title: string
   kicker: string
   category: Category
@@ -239,8 +248,8 @@ export const STOPS: Stop[] = [
 ]
 
 // ── Bookings ────────────────────────────────────────────────────────────────
-export type BookingStatus = 'Not booked' | 'Booking in progress' | 'Holiday hours / seating to confirm' | 'Confirmed' | 'Cancelled' | 'Not required'
-export const BOOKING_STATUSES: BookingStatus[] = ['Not booked', 'Booking in progress', 'Holiday hours / seating to confirm', 'Confirmed', 'Cancelled', 'Not required']
+export type BookingStatus = 'Not booked' | 'Booking in progress' | 'Holiday hours / seating to confirm' | 'Status unknown' | 'Confirmed' | 'Cancelled' | 'Not required'
+export const BOOKING_STATUSES: BookingStatus[] = ['Not booked', 'Booking in progress', 'Holiday hours / seating to confirm', 'Status unknown', 'Confirmed', 'Cancelled', 'Not required']
 export interface Booking {
   id: string
   title: string
@@ -341,9 +350,9 @@ export const PLANS: Plan[] = [
     notes: ['Kuwohi skipped — enjoy other permitted scenic pullouts on US-441.', 'Extra time goes to Cataract Falls (+20 min) and downtown Gatlinburg (+40 min).'], keeps: ['Anakeesta and coaster tickets unchanged; dinner at Spice Express unchanged.'],
   },
   {
-    id: 'C', name: 'Plan C — US-441 Closed', short: 'No mountain crossing. Verified open highway to Gatlinburg; prioritize downtown, Anakeesta & coaster', skip: ['ocon', 'ngap', 'kuwohi', 'cataract'], morningVia: 'around', extend: { downtown: 60 },
-    notes: ['Oconaluftee, Newfound Gap, Kuwohi and Cataract Falls skipped.', 'Let Google Maps route around the closure (OSRM: ≈ 5 h 42 min via Asheville/I-40) — verify it is open.', 'Optional: Gatlinburg SkyPark if time and budget allow.'],
-    keeps: ['Anakeesta and coaster tickets unchanged; dinner at Spice Express unchanged.', 'Parking tag not needed if you don’t park inside the park.'],
+    id: 'C', name: 'Plan C — Mountain Roads Closed', short: 'Skip the closed mountain roads. Alternate highway from Cherokee: US-74 → I-40 → Exit 407 → Sevierville → Pigeon Forge → Gatlinburg', skip: ['bigwitch', 'ngap', 'kuwohi'],
+    notes: ['Big Witch Overlook, Newfound Gap and Kuwohi skipped due to road closures (kept in trip history).', 'Alternate highway corridor via Waynesville and Sevierville — OSRM ≈ 2 h 43 min without traffic; allow 2.5–3.5 h. Check live Google Maps before driving.', 'Cataract Falls only if accessible and time permits. Never drive past closure barriers.'],
+    keeps: ['Anakeesta Full Access and the 8:45 PM coaster booking unchanged.', 'Dinner to be finalized: Option A early in Gatlinburg (recommended) or Option B Spice Express.'],
   },
 ]
 export const SKYPARK = { tickets: 'https://www.gatlinburgskypark.com/tickets', maps: search('Gatlinburg SkyPark 765 Parkway Gatlinburg TN') }

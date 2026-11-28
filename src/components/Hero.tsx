@@ -127,6 +127,14 @@ const EXPERIENCES = [
 ]
 
 export function Experiences() {
+  const doc = useDoc()
+  const exps = doc.plan === 'C'
+    ? [
+        { ...EXPERIENCES[0], title: 'Alternate Highway Route', text: 'Mountain roads are closed today, so we loop around: Cherokee → Waynesville → I-40 → Sevierville → Gatlinburg, then downtown and an optional Cataract Falls walk.', href: '#map', meta: '7:00 AM – 2:15 PM · Plan C' },
+        EXPERIENCES[1],
+        { ...EXPERIENCES[2], text: 'Holiday lights downtown, dinner, then the Moonshine Mountain Coaster — confirmed for 8:45 PM.', meta: '6:15 – 9:15 PM' },
+      ]
+    : EXPERIENCES
   return (
     <section id="experiences" className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
       <Reveal>
@@ -137,7 +145,7 @@ export function Experiences() {
         </h2>
       </Reveal>
       <div className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
-        {EXPERIENCES.map((e, i) => (
+        {exps.map((e, i) => (
           <Reveal key={e.n} delay={i * 90}>
             <a href={e.href} className="group relative block h-[340px] overflow-hidden rounded-[28px] text-cream sm:h-[440px]">
               <Photo k={e.k} alt={e.title} sizes="(min-width:640px) 33vw, 100vw" className="absolute inset-0 transition-transform duration-[1.2s] group-hover:scale-105" />

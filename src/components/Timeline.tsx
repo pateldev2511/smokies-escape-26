@@ -43,6 +43,8 @@ async function shareStop(s: Projected) {
 }
 
 function Classification({ s }: { s: Projected }) {
+  if (s.status.s === 'skipped') return <span className="chip">Skipped{s.skipReason ? ` · ${s.skipReason}` : ''}</span>
+  if (s.booking?.status === 'Confirmed' && !s.fixedAt) return <span className="chip !border-emerald-400/50 !text-emerald-300 light:!text-emerald-700"><Lock size={11} /> Booked · entry time TBD</span>
   if (s.fixedAt)
     return (
       <span className="chip !border-emerald-400/50 !text-emerald-300 light:!text-emerald-700">
@@ -195,7 +197,7 @@ function DestinationCard({ s, trip, next }: { s: Projected; trip: boolean; next?
           <Car size={13} className="gold" /> drive / walk to next ≈ {next ? dur(next.driveIn || 0) : '—'} · OSRM, no traffic
         </p>
       )}
-      {skipped && <p className="ink2 mono py-3.5 pl-1 text-[0.7rem]">SKIPPED — schedule recalculated</p>}
+      {skipped && <p className="ink2 mono py-3.5 pl-1 text-[0.7rem]">SKIPPED{s.skipReason ? ` — ${s.skipReason.toUpperCase()}` : ' — SCHEDULE RECALCULATED'}</p>}
     </article>
   )
 }

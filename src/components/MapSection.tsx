@@ -2,6 +2,7 @@ import { AlertTriangle, Moon, Navigation, Route, Sunrise, Sunset } from 'lucide-
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { FULL_ROUTE, ROAD_STATUS_URL, ROUTE_ALTERNATIVES, dir } from '../data/trip'
 import { useTrip } from '../lib/engine'
+import { useDoc } from '../lib/doc'
 import { dur, fmt } from '../lib/time'
 import { CAT } from './Timeline'
 import { ExtLink, Note, Section } from './ui'
@@ -9,7 +10,8 @@ import { ExtLink, Note, Section } from './ui'
 const RouteMap = lazy(() => import('./RouteMap'))
 
 export function MapSection({ theme }: { theme: 'dark' | 'light' }) {
-  const { stops } = useTrip()
+  const { stops, plan } = useTrip()
+  const { corridor } = useDoc()
   const ref = useRef<HTMLDivElement>(null)
   const [show, setShow] = useState(false)
   const [view, setView] = useState<'park' | 'town' | 'all'>('park')
@@ -37,7 +39,8 @@ export function MapSection({ theme }: { theme: 'dark' | 'light' }) {
       </div>
 
       <div className="mt-5 grid gap-2.5 sm:grid-cols-4">
-        <ExtLink href={FULL_ROUTE.all} className="btn btn-gold sm:col-span-4"><Route size={18} /> OPEN FULL TRIP ROUTE</ExtLink>
+        {corridor && <ExtLink href={corridor.url} className="btn btn-gold !min-h-[56px] sm:col-span-4"><Route size={18} /> OPEN ALTERNATE ROUTE</ExtLink>}
+        <ExtLink href={FULL_ROUTE.all} className={`btn ${corridor ? 'btn-ghost' : 'btn-gold'} sm:col-span-4`}><Route size={18} /> {corridor ? 'Original full route (mountain roads closed)' : 'OPEN FULL TRIP ROUTE'}</ExtLink>
         <ExtLink href={FULL_ROUTE.morning} className="btn btn-ghost"><Sunrise size={16} /> Morning segment</ExtLink>
         <ExtLink href={FULL_ROUTE.afternoon} className="btn btn-ghost"><Sunset size={16} /> Afternoon segment</ExtLink>
         <ExtLink href={FULL_ROUTE.home} className="btn btn-ghost"><Moon size={16} /> Return home</ExtLink>
@@ -57,7 +60,7 @@ export function MapSection({ theme }: { theme: 'dark' | 'light' }) {
           <div key={r.label} className="panel p-4">
             <p className="label">{r.label}</p>
             <p className="mono mt-2 text-2xl font-semibold">{dur(r.min)} <span className="ink2 text-sm">· {r.mi} mi</span></p>
-            <p className="ink2 mt-1 text-xs">OSRM estimate without stops or traffic. {r.min < 300 ? 'Crosses Newfound Gap (5,046 ft) in the dark — only if the road is open and conditions are good.' : 'Interstate the whole way — longer, but no high mountain road at night.'}</p>
+            <p className="ink2 mt-1 text-xs">OSRM estimate without stops or traffic. {r.min < 300 ? (plan.id === 'C' ? '⛔ Mountain road closed today — do not use unless officially reopened.' : 'Crosses Newfound Gap (5,046 ft) in the dark — only if the road is open and conditions are good.') : 'Interstate the whole way — longer, but no high mountain road at night.'}</p>
           </div>
         ))}
       </div>

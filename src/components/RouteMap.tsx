@@ -10,13 +10,30 @@ import { fmt } from '../lib/time'
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 const BASE = import.meta.env.BASE_URL
 
+/** Google encoded-polyline decoder (precision 5). */
+function decodePolyline(str: string): [number, number][] {
+  const out: [number, number][] = []
+  let i = 0, lat = 0, lng = 0
+  while (i < str.length) {
+    for (const k of [0, 1]) {
+      let shift = 0, result = 0, b
+      do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5 } while (b >= 0x20)
+      const d = result & 1 ? ~(result >> 1) : result >> 1
+      if (k === 0) lat += d
+      else lng += d
+    }
+    out.push([lat / 1e5, lng / 1e5])
+  }
+  return out
+}
+
 export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; view: 'park' | 'town' | 'all' }) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map | null>(null)
   const tiles = useRef<L.TileLayer | null>(null)
   const layer = useRef<L.LayerGroup | null>(null)
   const { stops } = useTrip()
-  const { rental } = useDoc()
+  const { rental, corridor } = useDoc()
 
   useEffect(() => {
     if (!el.current || map.current) return
@@ -68,6 +85,12 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
       L.marker([p.lat, p.lng], { icon, title, alt: title, keyboard: true }).bindPopup(html, { maxWidth: 240, minWidth: 240 }).addTo(layer.current!)
       all.push([p.lat, p.lng])
     })
+    // Real routed corridor (OSRM) — e.g. the Plan C highway detour. Not live traffic.
+    if (corridor?.poly) {
+      const pts = decodePolyline(corridor.poly)
+      L.polyline(pts, { color: '#E8B86D', weight: 5, opacity: 0.85, dashArray: '10 8' }).bindTooltip(`${corridor.label} · ≈ ${Math.floor(corridor.min / 60)} h ${corridor.min % 60} min without traffic (OSRM)`).addTo(layer.current!)
+      pts.forEach((p) => all.push(p))
+    }
     // Rental pickup / return pins — only once the organizer has entered (and geocoded) real addresses
     ;[['P', 'Rental pickup · Fri 6:00 PM', rental.pickupGeo, rental.pickupAddress], ['R', `Rental return · by ${rental.returnBy.slice(11)} Sun`, rental.returnGeo, rental.returnAddress]].forEach(([lbl, title, g, addr]) => {
       const geo = g as typeof rental.pickupGeo
@@ -80,7 +103,7 @@ export default function RouteMap({ theme, view }: { theme: 'dark' | 'light'; vie
     const park: L.LatLngExpression[] = [[PLACES.ocon.lat, PLACES.ocon.lng], [PLACES.kuwohi.lat, PLACES.kuwohi.lng], [PLACES.spice.lat, PLACES.spice.lng], [PLACES.coaster.lat, PLACES.coaster.lng]]
     const town: L.LatLngExpression[] = [[PLACES.spice.lat, PLACES.spice.lng], [PLACES.coaster.lat, PLACES.coaster.lng], [PLACES.anak.lat, PLACES.anak.lng], [PLACES.sugar.lat, PLACES.sugar.lng]]
     map.current.fitBounds(L.latLngBounds(view === 'all' ? all : view === 'town' ? town : park), { padding: [30, 30] })
-  }, [stops, view, rental])
+  }, [stops, view, rental, corridor])
 
   return <div ref={el} className="h-[460px] w-full sm:h-[600px]" role="region" aria-label="Interactive trip map" />
 }

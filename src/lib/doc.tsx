@@ -37,6 +37,10 @@ export interface TripDoc {
   expenses: Expense[]
   checklist: ChecklistItem[]
   travelers: Traveler[]
+  /** Dinner decision: A = early Gatlinburg, B = Spice Express after the coaster. */
+  dinnerPlan?: 'TBD' | 'A' | 'B'
+  /** Real routed corridor (OSRM) drawn on the map, e.g. the Plan C highway detour. */
+  corridor?: { poly: string; min: number; mi: number; label: string; url: string }
 }
 
 /** Private, never-published data (organizer only). */
